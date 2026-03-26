@@ -181,6 +181,7 @@ export interface ProjectWithDetails extends Project {
   tasks?: Task[]
   next_step?: Task | null
   links?: ProjectLink[]
+  leads?: Lead[]
   github_cache?: GitHubCache | null
 }
 

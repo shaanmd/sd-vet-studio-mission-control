@@ -1,13 +1,14 @@
 import { notFound } from 'next/navigation'
 import { getProject } from '@/lib/queries/projects'
 import { createClient } from '@/lib/supabase/server'
-import type { Profile, Task, ProjectNote } from '@/lib/types/database'
+import type { Profile, Task, ProjectNote, Lead } from '@/lib/types/database'
 import ProjectHeader from '@/components/project-detail/ProjectHeader'
 import ProjectSummary from '@/components/project-detail/ProjectSummary'
 import TaskList from '@/components/project-detail/TaskList'
 import KeyLinks from '@/components/project-detail/KeyLinks'
 import AutoStatus from '@/components/project-detail/AutoStatus'
 import NotesLog from '@/components/project-detail/NotesLog'
+import { LeadsSection } from '@/components/project-detail/LeadsSection'
 
 export default async function ProjectDetailPage({
   params,
@@ -44,6 +45,7 @@ export default async function ProjectDetailPage({
   const githubCache = project.github_cache ?? null
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const notes = ((project as any).project_notes ?? []) as ProjectNote[]
+  const leads = (project.leads ?? []) as Lead[]
 
   return (
     <div className="min-h-screen p-4 pb-24" style={{ backgroundColor: '#F5F0E8' }}>
@@ -75,6 +77,8 @@ export default async function ProjectDetailPage({
         <AutoStatus cache={githubCache} />
 
         <NotesLog projectId={project.id} notes={notes} profiles={profiles} />
+
+        <LeadsSection projectId={project.id} leads={leads} />
       </div>
     </div>
   )
