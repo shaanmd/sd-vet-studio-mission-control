@@ -1,10 +1,22 @@
-export default function ProjectsPage() {
+import { getProjects, getProjectCounts } from '@/lib/queries/projects'
+import ProjectList from '@/components/projects/ProjectList'
+
+export default async function ProjectsPage() {
+  const [projects, counts] = await Promise.all([
+    getProjects(),
+    getProjectCounts(),
+  ])
+
   return (
-    <div className="min-h-screen p-6" style={{ backgroundColor: '#F5F0E8' }}>
-      <h1 className="text-2xl font-bold text-[#2C3E50] mb-4">Projects</h1>
-      <div className="bg-white rounded-xl p-6 shadow-sm">
-        <p className="text-[#2C3E50]">Coming soon.</p>
+    <div className="min-h-screen p-4 pb-24" style={{ backgroundColor: '#F5F0E8' }}>
+      <div className="mb-4">
+        <h1 className="text-xl font-bold text-[#2C3E50]">All Projects</h1>
+        <p className="text-xs text-[#8899a6]">
+          {counts.all ?? 0} project{(counts.all ?? 0) !== 1 ? 's' : ''}
+        </p>
       </div>
+
+      <ProjectList projects={projects} counts={counts} />
     </div>
   )
 }
