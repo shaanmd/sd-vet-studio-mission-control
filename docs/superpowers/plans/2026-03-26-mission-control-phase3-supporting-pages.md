@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build the Resources page, Activity Log + Win Wall, full Settings page, and Leads & Beta Testers section on Project Detail.
+**Goal:** Build the Resources page, Activity Log + Win Wall, full Settings page, Leads & Beta Testers on Project Detail, and Add Link UI on Project Detail.
 
-**Architecture:** Same pattern as Phase 2 — server components for data fetch, client components for interactivity. Resources page is mostly static links. Activity Log queries the `activity_log` table. Leads are a sub-section of the project detail page.
+**Architecture:** Same pattern as Phase 2 — server components for data fetch, client components for interactivity. Resources page is mostly static links. Activity Log queries the `activity_log` table. Leads and Add Link are sub-sections of the project detail page.
 
 **Tech Stack:** Next.js 15, Tailwind CSS 4, TypeScript, Supabase
 
@@ -13,13 +13,241 @@
 
 ---
 
-### Task 1: Resources Page
+### Task 1: Add Link UI on Project Detail
 
 **Files:**
-- Modify: `app/resources/page.tsx`
-- Create: `components/resources/ResourceList.tsx`
+- Create: `lib/mutations/links.ts`
+- Modify: `components/project-detail/KeyLinks.tsx`
+
+- [ ] **Step 1: Create link mutations**
+
+Create `lib/mutations/links.ts`:
+```typescript
+import { createClient } from '@/lib/supabase/client'
+
+export async function createProjectLink(input: {
+  project_id: string
+  label: string
+  url: string
+  icon?: string
+}): Promise<void> {
+  const supabase = createClient()
+
+  const { error } = await supabase
+    .from('project_links')
+    .insert({
+      project_id: input.project_id,
+      label: input.label,
+      url: input.url,
+      icon: input.icon ?? null,
+      is_auto: false,
+    })
+
+  if (error) throw error
+}
+
+export async function deleteProjectLink(id: string): Promise<void> {
+  const supabase = createClient()
+
+  const { error } = await supabase
+    .from('project_links')
+    .delete()
+    .eq('id', id)
+
+  if (error) throw error
+}
+```
+
+- [ ] **Step 2: Convert KeyLinks to client component with add form**
+
+Replace `components/project-detail/KeyLinks.tsx`:
+```tsx
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { createProjectLink, deleteProjectLink } from '@/lib/mutations/links'
+import type { ProjectLink } from '@/lib/types/database'
+
+export default function KeyLinks({
+  projectId,
+  links,
+}: {
+  projectId: string
+  links: ProjectLink[]
+}) {
+  const router = useRouter()
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [label, setLabel] = useState('')
+  const [url, setUrl] = useState('')
+  const [icon, setIcon] = useState('')
+  const [adding, setAdding] = useState(false)
+
+  async function handleAdd() {
+    if (!label.trim() || !url.trim()) return
+    setAdding(true)
+    try {
+      await createProjectLink({
+        project_id: projectId,
+        label: label.trim(),
+        url: url.trim(),
+        icon: icon.trim() || undefined,
+      })
+      setLabel('')
+      setUrl('')
+      setIcon('')
+      setShowAddForm(false)
+      router.refresh()
+    } catch {
+      alert('Failed to add link.')
+    } finally {
+      setAdding(false)
+    }
+  }
+
+  async function handleDelete(linkId: string) {
+    try {
+      await deleteProjectLink(linkId)
+      router.refresh()
+    } catch {
+      alert('Failed to delete link.')
+    }
+  }
+
+  return (
+    <div className="mb-4">
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-[11px] uppercase tracking-[2px] text-[#1E6B5E] font-semibold">
+          Key Links
+        </h2>
+        <button
+          onClick={() => setShowAddForm(!showAddForm)}
+          className="text-xs font-medium text-[#1E6B5E]"
+        >
+          + Add
+        </button>
+      </div>
+
+      {showAddForm && (
+        <div className="bg-white rounded-xl border border-black/[0.08] p-3 mb-2 space-y-2">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={icon}
+              onChange={(e) => setIcon(e.target.value)}
+              placeholder="Icon"
+              className="w-12 text-center text-sm border border-black/10 rounded-lg px-1 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#1E6B5E]/30"
+            />
+            <input
+              type="text"
+              value={label}
+              onChange={(e) => setLabel(e.target.value)}
+              placeholder="Label (e.g. GitHub Repo)"
+              className="flex-1 text-sm border border-black/10 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#1E6B5E]/30"
+              autoFocus
+            />
+          </div>
+          <input
+            type="url"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+            placeholder="https://..."
+            className="w-full text-sm border border-black/10 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#1E6B5E]/30"
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={handleAdd}
+              disabled={adding || !label.trim() || !url.trim()}
+              className="text-xs font-medium px-3 py-1.5 rounded-lg bg-[#1E6B5E] text-white disabled:opacity-50"
+            >
+              {adding ? '...' : 'Save'}
+            </button>
+            <button
+              onClick={() => {
+                setLabel('')
+                setUrl('')
+                setIcon('')
+                setShowAddForm(false)
+              }}
+              className="text-xs font-medium px-3 py-1.5 rounded-lg bg-black/5 text-[#2C3E50]"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {links.length === 0 && !showAddForm && (
+        <p className="text-sm text-[#8899a6] italic">No links yet.</p>
+      )}
+
+      <div className="grid grid-cols-2 gap-2">
+        {links.map((link) => (
+          <div
+            key={link.id}
+            className="group relative flex items-center gap-2 bg-white rounded-xl border border-black/[0.08] p-3 hover:border-[#1E6B5E]/20 transition-colors"
+          >
+            <a
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 flex-1 min-w-0"
+            >
+              {link.icon && <span className="text-base">{link.icon}</span>}
+              <span className="text-sm text-[#2C3E50] font-medium truncate">
+                {link.label}
+              </span>
+            </a>
+            {!link.is_auto && (
+              <button
+                onClick={() => handleDelete(link.id)}
+                className="opacity-0 group-hover:opacity-100 text-[#8899a6] hover:text-red-500 text-xs transition-opacity"
+                aria-label={`Delete ${link.label}`}
+              >
+                &times;
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+```
+
+- [ ] **Step 3: Update Project Detail page to pass projectId to KeyLinks**
+
+In `app/projects/[id]/page.tsx`, change the KeyLinks usage from:
+```tsx
+<KeyLinks links={links} />
+```
+to:
+```tsx
+<KeyLinks projectId={project.id} links={links} />
+```
+
+- [ ] **Step 4: Verify the app builds**
+
+Run: `npm run build`
+Expected: No errors.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add lib/mutations/links.ts components/project-detail/KeyLinks.tsx app/projects/[id]/page.tsx
+git commit -m "feat: add link management UI to Project Detail page"
+```
+
+---
+
+### Task 2: Resources Page
+
+**Files:**
 - Create: `lib/queries/resources.ts`
 - Create: `supabase/seed-resources.sql`
+- Create: `components/resources/ResourceList.tsx`
+- Modify: `app/resources/page.tsx`
 
 - [ ] **Step 1: Create resources query**
 
@@ -129,7 +357,7 @@ export function ResourceList({ grouped }: ResourceListProps) {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="🔍 Search resources..."
+          placeholder="Search resources..."
           className="w-full px-3 py-2.5 rounded-lg border border-black/10 bg-white text-sm text-[#2C3E50] focus:outline-none focus:ring-2 focus:ring-[#1E6B5E]"
         />
       </div>
@@ -145,7 +373,7 @@ export function ResourceList({ grouped }: ResourceListProps) {
               <div className="text-[11px] uppercase tracking-[2px] text-[#1E6B5E] font-semibold mb-2">
                 {info.label}
               </div>
-              <div className="bg-white rounded-xl border border-black/8 overflow-hidden">
+              <div className="bg-white rounded-xl border border-black/[0.08] overflow-hidden">
                 {resources.map((resource, i) => (
                   <a
                     key={resource.id}
@@ -165,7 +393,7 @@ export function ResourceList({ grouped }: ResourceListProps) {
                         <div className="text-[11px] text-[#8899a6]">{resource.description}</div>
                       )}
                     </div>
-                    <span className="text-[#ccc] text-xs">↗</span>
+                    <span className="text-[#ccc] text-xs">&nearr;</span>
                   </a>
                 ))}
               </div>
@@ -209,13 +437,14 @@ git commit -m "feat: build Resources page with categorised links and search"
 
 ---
 
-### Task 2: Activity Log + Win Wall
+### Task 3: Activity Log + Win Wall
 
 **Files:**
-- Modify: `app/log/page.tsx`
+- Create: `lib/queries/activity.ts`
 - Create: `components/log/ActivityFeed.tsx`
 - Create: `components/log/WinWall.tsx`
-- Create: `lib/queries/activity.ts`
+- Create: `components/log/LogTabs.tsx`
+- Modify: `app/log/page.tsx`
 
 - [ ] **Step 1: Create activity query functions**
 
@@ -271,28 +500,28 @@ interface ActivityFeedProps {
 }
 
 const actionIcons: Record<string, string> = {
-  task_completed: '✅',
-  note_added: '📝',
-  stage_changed: '🔄',
-  deployed: '🚀',
-  project_created: '✨',
-  project_pinned: '⭐',
+  task_completed: '\u2705',
+  note_added: '\uD83D\uDCDD',
+  stage_changed: '\uD83D\uDD04',
+  deployed: '\uD83D\uDE80',
+  project_created: '\u2728',
+  project_pinned: '\u2B50',
 }
 
 export function ActivityFeed({ entries }: ActivityFeedProps) {
   if (entries.length === 0) {
     return (
-      <div className="bg-white rounded-xl border border-black/8 p-8 text-center">
-        <p className="text-sm text-[#8899a6]">Nothing here yet — complete your first task and it'll show up here! 🎉</p>
+      <div className="bg-white rounded-xl border border-black/[0.08] p-8 text-center">
+        <p className="text-sm text-[#8899a6]">Nothing here yet — complete your first task and it'll show up here!</p>
       </div>
     )
   }
 
   return (
-    <div className="bg-white rounded-xl border border-black/8 overflow-hidden">
+    <div className="bg-white rounded-xl border border-black/[0.08] overflow-hidden">
       {entries.map((entry, i) => (
         <div key={entry.id} className={`flex items-start gap-2.5 px-3.5 py-3 ${i < entries.length - 1 ? 'border-b border-black/5' : ''}`}>
-          <span className="text-base mt-0.5">{actionIcons[entry.action] ?? '📋'}</span>
+          <span className="text-base mt-0.5">{actionIcons[entry.action] ?? '\uD83D\uDCCB'}</span>
           <div className="flex-1 min-w-0">
             <div className="text-[13px] text-[#2C3E50]">{entry.description}</div>
             <div className="flex items-center gap-1.5 mt-1 text-[11px] text-[#8899a6]">
@@ -301,8 +530,8 @@ export function ActivityFeed({ entries }: ActivityFeedProps) {
                   {entry.project.emoji} {entry.project.name}
                 </Link>
               )}
-              {entry.actor && <span>· {entry.actor.name}</span>}
-              <span>· {formatDistanceToNow(entry.created_at)}</span>
+              {entry.actor && <span>&middot; {entry.actor.name}</span>}
+              <span>&middot; {formatDistanceToNow(entry.created_at)}</span>
             </div>
           </div>
         </div>
@@ -327,8 +556,8 @@ interface WinWallProps {
 export function WinWall({ wins }: WinWallProps) {
   if (wins.length === 0) {
     return (
-      <div className="bg-white rounded-xl border border-black/8 p-8 text-center">
-        <div className="text-4xl mb-3">🏆</div>
+      <div className="bg-white rounded-xl border border-black/[0.08] p-8 text-center">
+        <div className="text-4xl mb-3">{'\uD83C\uDFC6'}</div>
         <p className="text-sm text-[#8899a6]">Your wins will appear here. Go ship something!</p>
       </div>
     )
@@ -339,7 +568,7 @@ export function WinWall({ wins }: WinWallProps) {
       {wins.map((win) => (
         <div key={win.id} className="bg-white rounded-xl border border-[#D4A853]/20 p-3.5">
           <div className="flex items-start gap-2.5">
-            <span className="text-lg">🎉</span>
+            <span className="text-lg">{'\uD83C\uDF89'}</span>
             <div className="flex-1">
               <div className="text-[13px] font-medium text-[#2C3E50]">{win.description}</div>
               <div className="flex items-center gap-1.5 mt-1 text-[11px] text-[#8899a6]">
@@ -348,8 +577,8 @@ export function WinWall({ wins }: WinWallProps) {
                     {win.project.emoji} {win.project.name}
                   </Link>
                 )}
-                {win.actor && <span>· {win.actor.name}</span>}
-                <span>· {formatDistanceToNow(win.created_at)}</span>
+                {win.actor && <span>&middot; {win.actor.name}</span>}
+                <span>&middot; {formatDistanceToNow(win.created_at)}</span>
               </div>
             </div>
           </div>
@@ -360,33 +589,7 @@ export function WinWall({ wins }: WinWallProps) {
 }
 ```
 
-- [ ] **Step 4: Wire up the Log page with tabs**
-
-Replace `app/log/page.tsx`:
-```tsx
-import { getActivityLog, getWins } from '@/lib/queries/activity'
-import { ActivityFeed } from '@/components/log/ActivityFeed'
-import { WinWall } from '@/components/log/WinWall'
-import { LogTabs } from '@/components/log/LogTabs'
-
-export default async function LogPage() {
-  const [activity, wins] = await Promise.all([
-    getActivityLog(),
-    getWins(),
-  ])
-
-  return (
-    <div className="p-5 max-w-lg mx-auto md:max-w-2xl">
-      <h1 className="text-xl font-bold text-[#2C3E50] mb-4">Activity</h1>
-      <LogTabs
-        activityContent={<ActivityFeed entries={activity} />}
-        winContent={<WinWall wins={wins} />}
-        winCount={wins.length}
-      />
-    </div>
-  )
-}
-```
+- [ ] **Step 4: Create LogTabs component and wire up Log page**
 
 Create `components/log/LogTabs.tsx`:
 ```tsx
@@ -420,10 +623,36 @@ export function LogTabs({ activityContent, winContent, winCount }: LogTabsProps)
             tab === 'wins' ? 'bg-[#D4A853] text-white' : 'bg-white text-[#8899a6] border border-black/10 border-l-0'
           }`}
         >
-          Win Wall 🏆 {winCount > 0 && `(${winCount})`}
+          Win Wall {winCount > 0 && `(${winCount})`}
         </button>
       </div>
       {tab === 'activity' ? activityContent : winContent}
+    </div>
+  )
+}
+```
+
+Replace `app/log/page.tsx`:
+```tsx
+import { getActivityLog, getWins } from '@/lib/queries/activity'
+import { ActivityFeed } from '@/components/log/ActivityFeed'
+import { WinWall } from '@/components/log/WinWall'
+import { LogTabs } from '@/components/log/LogTabs'
+
+export default async function LogPage() {
+  const [activity, wins] = await Promise.all([
+    getActivityLog(),
+    getWins(),
+  ])
+
+  return (
+    <div className="p-5 max-w-lg mx-auto md:max-w-2xl">
+      <h1 className="text-xl font-bold text-[#2C3E50] mb-4">Activity</h1>
+      <LogTabs
+        activityContent={<ActivityFeed entries={activity} />}
+        winContent={<WinWall wins={wins} />}
+        winCount={wins.length}
+      />
     </div>
   )
 }
@@ -438,21 +667,42 @@ git commit -m "feat: build Activity Log and Win Wall with tabs"
 
 ---
 
-### Task 3: Leads & Beta Testers on Project Detail
+### Task 4: Leads & Beta Testers on Project Detail
 
 **Files:**
-- Create: `components/project-detail/LeadsSection.tsx`
 - Create: `lib/mutations/leads.ts`
+- Create: `components/project-detail/LeadsSection.tsx`
+- Modify: `lib/types/database.ts` (add `leads` to `ProjectWithDetails`)
 - Modify: `app/projects/[id]/page.tsx` (add LeadsSection)
 
-- [ ] **Step 1: Create lead mutations**
+- [ ] **Step 1: Add `leads` to ProjectWithDetails type**
+
+In `lib/types/database.ts`, change:
+```typescript
+export interface ProjectWithDetails extends Project {
+  tasks?: Task[]
+  next_step?: Task | null
+  links?: ProjectLink[]
+  github_cache?: GitHubCache | null
+}
+```
+to:
+```typescript
+export interface ProjectWithDetails extends Project {
+  tasks?: Task[]
+  next_step?: Task | null
+  links?: ProjectLink[]
+  leads?: Lead[]
+  github_cache?: GitHubCache | null
+}
+```
+
+- [ ] **Step 2: Create lead mutations**
 
 Create `lib/mutations/leads.ts`:
 ```typescript
 import { createClient } from '@/lib/supabase/client'
 import type { InterestLevel } from '@/lib/types/database'
-
-const supabase = createClient()
 
 export async function addLead(data: {
   project_id: string
@@ -462,8 +712,10 @@ export async function addLead(data: {
   source?: string
   interest_level?: InterestLevel
   added_by: string
-}) {
-  const { data: lead, error } = await supabase
+}): Promise<void> {
+  const supabase = createClient()
+
+  const { error } = await supabase
     .from('leads')
     .insert({
       project_id: data.project_id,
@@ -474,14 +726,13 @@ export async function addLead(data: {
       interest_level: data.interest_level ?? 'warm',
       added_by: data.added_by,
     })
-    .select()
-    .single()
 
   if (error) throw error
-  return lead
 }
 
-export async function promoteToBeta(leadId: string) {
+export async function promoteToBeta(leadId: string): Promise<void> {
+  const supabase = createClient()
+
   const { error } = await supabase
     .from('leads')
     .update({
@@ -493,21 +744,9 @@ export async function promoteToBeta(leadId: string) {
 
   if (error) throw error
 }
-
-export async function addLeadFeedback(data: {
-  lead_id: string
-  author_id: string
-  content: string
-}) {
-  const { error } = await supabase
-    .from('lead_feedback')
-    .insert(data)
-
-  if (error) throw error
-}
 ```
 
-- [ ] **Step 2: Create LeadsSection component**
+- [ ] **Step 3: Create LeadsSection component**
 
 Create `components/project-detail/LeadsSection.tsx`:
 ```tsx
@@ -526,9 +765,9 @@ interface LeadsSectionProps {
 }
 
 const interestIcons: Record<InterestLevel, string> = {
-  hot: '🔥',
-  warm: '👍',
-  curious: '🤷',
+  hot: '\uD83D\uDD25',
+  warm: '\uD83D\uDC4D',
+  curious: '\uD83E\uDD37',
 }
 
 export function LeadsSection({ projectId, leads }: LeadsSectionProps) {
@@ -567,18 +806,24 @@ export function LeadsSection({ projectId, leads }: LeadsSectionProps) {
       setInterest('warm')
       setShowAdd(false)
       router.refresh()
+    } catch {
+      alert('Failed to add lead.')
     } finally {
       setSaving(false)
     }
   }
 
   async function handlePromote(leadId: string) {
-    await promoteToBeta(leadId)
-    router.refresh()
+    try {
+      await promoteToBeta(leadId)
+      router.refresh()
+    } catch {
+      alert('Failed to promote to beta.')
+    }
   }
 
   return (
-    <div className="bg-white rounded-xl border border-black/8 overflow-hidden mb-3">
+    <div className="bg-white rounded-xl border border-black/[0.08] overflow-hidden mb-4">
       <div className="px-3.5 py-3 border-b border-black/5 flex justify-between items-center">
         <div>
           <div className="text-[11px] uppercase tracking-[2px] text-[#1E6B5E] font-semibold">
@@ -586,8 +831,8 @@ export function LeadsSection({ projectId, leads }: LeadsSectionProps) {
           </div>
           {leads.length > 0 && (
             <div className="text-[10px] text-[#8899a6] mt-0.5">
-              {regularLeads.length} leads · {betaTesters.length} beta testers
-              {feedbackPending > 0 && ` · ${feedbackPending} feedback pending`}
+              {regularLeads.length} leads &middot; {betaTesters.length} beta testers
+              {feedbackPending > 0 && ` \u00B7 ${feedbackPending} feedback pending`}
             </div>
           )}
         </div>
@@ -635,14 +880,14 @@ export function LeadsSection({ projectId, leads }: LeadsSectionProps) {
               <span className="text-[10px] text-[#8899a6]">{formatDistanceToNow(lead.created_at)}</span>
               {!lead.is_beta_tester && (
                 <button onClick={() => handlePromote(lead.id)} className="text-[10px] text-[#1E6B5E] hover:underline">
-                  → Beta
+                  &rarr; Beta
                 </button>
               )}
             </div>
           </div>
           {lead.is_beta_tester && (
             <div className="mt-1.5 text-[11px] text-[#8899a6]">
-              Accepted: {lead.beta_accepted ?? 'pending'} · Feedback: {lead.beta_feedback_status}
+              Accepted: {lead.beta_accepted ?? 'pending'} &middot; Feedback: {lead.beta_feedback_status}
             </div>
           )}
         </div>
@@ -652,26 +897,39 @@ export function LeadsSection({ projectId, leads }: LeadsSectionProps) {
 }
 ```
 
-- [ ] **Step 3: Add LeadsSection to Project Detail page**
+- [ ] **Step 4: Add LeadsSection to Project Detail page**
 
-Add import and component to `app/projects/[id]/page.tsx`, after NotesLog:
+In `app/projects/[id]/page.tsx`, add the import:
 ```tsx
 import { LeadsSection } from '@/components/project-detail/LeadsSection'
-
-// ... in the return JSX, after <NotesLog />:
-<LeadsSection projectId={project.id} leads={project.leads ?? []} />
+import type { Profile, Task, ProjectNote, Lead } from '@/lib/types/database'
 ```
 
-- [ ] **Step 4: Commit**
+Add leads extraction after the notes line:
+```tsx
+const leads = (project.leads ?? []) as Lead[]
+```
+
+Add the component after `<NotesLog />`:
+```tsx
+<LeadsSection projectId={project.id} leads={leads} />
+```
+
+- [ ] **Step 5: Verify the app builds**
+
+Run: `npm run build`
+Expected: No errors.
+
+- [ ] **Step 6: Commit**
 
 ```bash
-git add components/project-detail/LeadsSection.tsx lib/mutations/leads.ts app/projects/[id]/page.tsx
+git add lib/types/database.ts lib/mutations/leads.ts components/project-detail/LeadsSection.tsx app/projects/[id]/page.tsx
 git commit -m "feat: add Leads & Beta Testers section to Project Detail"
 ```
 
 ---
 
-### Task 4: Enhanced Settings Page
+### Task 5: Enhanced Settings Page
 
 **Files:**
 - Modify: `app/settings/page.tsx`
@@ -714,7 +972,7 @@ export default function SettingsPage() {
       <h1 className="text-xl font-bold text-[#2C3E50] mb-4">Settings</h1>
 
       {/* Profile */}
-      <div className="bg-white rounded-xl border border-black/8 p-4 mb-4">
+      <div className="bg-white rounded-xl border border-black/[0.08] p-4 mb-4">
         <div className="text-[11px] uppercase tracking-[2px] text-[#1E6B5E] font-semibold mb-3">Profile</div>
         <div className="space-y-3">
           <div>
@@ -722,19 +980,19 @@ export default function SettingsPage() {
             <div className="flex gap-2">
               <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="flex-1 px-3 py-2 rounded-lg border border-black/10 bg-[#F5F0E8] text-sm" />
               <button onClick={handleSaveName} disabled={saving} className="px-3 py-2 rounded-lg bg-[#1E6B5E] text-white text-xs font-semibold disabled:opacity-50">
-                {saved ? '✓ Saved' : saving ? '...' : 'Save'}
+                {saved ? '\u2713 Saved' : saving ? '...' : 'Save'}
               </button>
             </div>
           </div>
           <div>
             <label className="text-xs text-[#8899a6] block mb-1">Role</label>
-            <p className="text-sm text-[#2C3E50]">{profile?.role ?? '—'}</p>
+            <p className="text-sm text-[#2C3E50]">{profile?.role ?? '\u2014'}</p>
           </div>
         </div>
       </div>
 
       {/* Integrations Placeholder */}
-      <div className="bg-white rounded-xl border border-black/8 p-4 mb-4">
+      <div className="bg-white rounded-xl border border-black/[0.08] p-4 mb-4">
         <div className="text-[11px] uppercase tracking-[2px] text-[#1E6B5E] font-semibold mb-3">Integrations</div>
         <div className="space-y-3 text-sm text-[#8899a6]">
           <div className="flex justify-between items-center">
@@ -772,6 +1030,7 @@ git commit -m "feat: enhance Settings page with profile editing and integration 
 
 ## Phase 3 Complete Checklist
 
+- [ ] Add Link UI on Project Detail (create, delete links)
 - [ ] Resources page with categorised links, search, seed data
 - [ ] Activity Log with feed and Win Wall tabs
 - [ ] Leads & Beta Testers on Project Detail
