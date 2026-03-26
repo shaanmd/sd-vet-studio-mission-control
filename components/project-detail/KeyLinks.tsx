@@ -18,6 +18,7 @@ export default function KeyLinks({
   const [url, setUrl] = useState('')
   const [icon, setIcon] = useState('')
   const [adding, setAdding] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   async function handleAdd() {
     if (!label.trim() || !url.trim()) return
@@ -42,11 +43,15 @@ export default function KeyLinks({
   }
 
   async function handleDelete(linkId: string) {
+    if (deletingId) return
+    setDeletingId(linkId)
     try {
       await deleteProjectLink(linkId)
       router.refresh()
     } catch {
       alert('Failed to delete link.')
+    } finally {
+      setDeletingId(null)
     }
   }
 
