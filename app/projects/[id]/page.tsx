@@ -70,7 +70,7 @@ export default async function ProjectDetailPage({
 
         <TaskList projectId={project.id} tasks={sortedTasks} profiles={profiles} />
 
-        <KeyLinks links={links} />
+        <KeyLinks projectId={project.id} links={links} />
 
         <AutoStatus cache={githubCache} />
 
