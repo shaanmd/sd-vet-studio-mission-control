@@ -124,6 +124,14 @@ Full information about a single project. Accessed by tapping any project card.
    - Manual notes from Deb or Shaan (with "+ Add Note" — opens a text input)
    - Auto-logged events (stage changes, deploys, task completions) — `note_type` field distinguishes these
    - Each entry shows author + timestamp
+8. **Leads & Beta Testers** — lightweight lead tracking per project for capturing interest from presentations, conversations, and networking:
+   - **Lead list** — each lead shows: name, role/clinic (e.g. "Dr Sarah Chen, Head Vet, Greenlane Clinic"), contact info (email/phone), how they heard about it (e.g. "Deb's NZVA presentation"), interest level (🔥 Hot / 👍 Warm / 🤷 Curious), date added, and who added them (Deb/Shaan)
+   - **"+ Add Lead" button** → inline form: name (required), role/clinic, contact, source, interest level
+   - **Beta tester promotion** — leads can be promoted to "Beta Tester" status. Beta testers additionally track: invited date, accepted (yes/no/pending), app version given, feedback status (Awaiting / Received / Follow-up needed)
+   - **Feedback log** — per beta tester, a mini-notes feed for capturing their feedback (e.g. "Sarah loved the CCL scoring but wants a print option"). Each entry timestamped.
+   - **Quick capture from Slack** — `/mc lead CCL "Dr Sarah Chen, Greenlane Clinic - excited about CCL scoring"` → AI parses the natural language into structured lead fields
+   - **Summary counts** shown at section header: "3 leads · 1 beta tester · 1 feedback pending"
+   - **Future CRM sync** — this data is structured to export/sync to a CRM tool when one is chosen
 
 ### 4. Activity Log + Win Wall
 
@@ -293,6 +301,36 @@ CREATE TABLE resources (
   sort_order integer DEFAULT 0
 );
 
+-- Leads (per-project interest tracking)
+CREATE TABLE leads (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id uuid NOT NULL REFERENCES projects ON DELETE CASCADE,
+  name text NOT NULL,
+  role_clinic text,             -- "Head Vet, Greenlane Clinic"
+  contact_email text,
+  contact_phone text,
+  source text,                  -- "NZVA presentation", "Deb conversation"
+  interest_level text DEFAULT 'warm'
+    CHECK (interest_level IN ('hot', 'warm', 'curious')),
+  is_beta_tester boolean DEFAULT false,
+  beta_invited_at timestamptz,
+  beta_accepted text CHECK (beta_accepted IN ('yes', 'no', 'pending')),
+  beta_app_version text,
+  beta_feedback_status text DEFAULT 'awaiting'
+    CHECK (beta_feedback_status IN ('awaiting', 'received', 'follow_up')),
+  added_by uuid REFERENCES profiles(id),
+  created_at timestamptz DEFAULT now()
+);
+
+-- Lead/Beta Tester Feedback
+CREATE TABLE lead_feedback (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  lead_id uuid NOT NULL REFERENCES leads ON DELETE CASCADE,
+  author_id uuid REFERENCES profiles(id),
+  content text NOT NULL,
+  created_at timestamptz DEFAULT now()
+);
+
 -- GitHub/Vercel Cache (auto-refreshed hourly)
 CREATE TABLE github_cache (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -358,6 +396,7 @@ Slack endpoint architecture: All Slack interactions (slash commands, events, bot
   - `/mc add "Voice transcription idea"` → creates inbox project
   - `/mc next VetRoute "Add mileage tracking"` → updates next step
   - `/mc done "Wire up auth"` → marks task complete
+  - `/mc lead CCL "Dr Sarah Chen, Greenlane Clinic - excited about CCL scoring"` → AI parses into structured lead
 
 - **Natural language (AI-powered):**
   - Message the bot: "just finished the auth flow on 6WSD, next up is the quiz component"
