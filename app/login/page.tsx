@@ -4,9 +4,13 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
+const PASSCODE_MAP: Record<string, string> = {
+  SHAANMC: process.env.NEXT_PUBLIC_SHAAN_EMAIL ?? '',
+  DEBMC: process.env.NEXT_PUBLIC_DEB_EMAIL ?? '',
+}
+
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [passcode, setPasscode] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -16,11 +20,23 @@ export default function LoginPage() {
     setError(null)
     setLoading(true)
 
+    const code = passcode.trim().toUpperCase()
+    const email = PASSCODE_MAP[code]
+
+    if (!email) {
+      setError('Invalid passcode')
+      setLoading(false)
+      return
+    }
+
     const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password: code,
+    })
 
     if (error) {
-      setError(error.message)
+      setError('Login failed. Please try again.')
       setLoading(false)
       return
     }
@@ -68,47 +84,9 @@ export default function LoginPage() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} noValidate>
-          <div style={{ marginBottom: '1rem' }}>
-            <label
-              htmlFor="email"
-              style={{
-                display: 'block',
-                fontSize: '0.875rem',
-                fontWeight: '600',
-                color: '#2C3E50',
-                marginBottom: '0.375rem',
-              }}
-            >
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-              placeholder="you@example.com"
-              style={{
-                width: '100%',
-                padding: '0.625rem 0.75rem',
-                fontSize: '1rem',
-                border: '1.5px solid #d1d5db',
-                borderRadius: '8px',
-                outline: 'none',
-                color: '#2C3E50',
-                backgroundColor: '#ffffff',
-                boxSizing: 'border-box',
-                transition: 'border-color 0.15s',
-              }}
-              onFocus={(e) => (e.target.style.borderColor = '#1E6B5E')}
-              onBlur={(e) => (e.target.style.borderColor = '#d1d5db')}
-            />
-          </div>
-
           <div style={{ marginBottom: '1.5rem' }}>
             <label
-              htmlFor="password"
+              htmlFor="passcode"
               style={{
                 display: 'block',
                 fontSize: '0.875rem',
@@ -117,16 +95,16 @@ export default function LoginPage() {
                 marginBottom: '0.375rem',
               }}
             >
-              Password
+              Passcode
             </label>
             <input
-              id="password"
+              id="passcode"
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={passcode}
+              onChange={(e) => setPasscode(e.target.value)}
               required
-              autoComplete="current-password"
-              placeholder="••••••••"
+              autoComplete="off"
+              placeholder="Enter your passcode"
               style={{
                 width: '100%',
                 padding: '0.625rem 0.75rem',
@@ -138,6 +116,8 @@ export default function LoginPage() {
                 backgroundColor: '#ffffff',
                 boxSizing: 'border-box',
                 transition: 'border-color 0.15s',
+                letterSpacing: '0.15em',
+                textAlign: 'center',
               }}
               onFocus={(e) => (e.target.style.borderColor = '#1E6B5E')}
               onBlur={(e) => (e.target.style.borderColor = '#d1d5db')}
@@ -181,7 +161,7 @@ export default function LoginPage() {
               if (!loading) (e.currentTarget.style.backgroundColor = '#1E6B5E')
             }}
           >
-            {loading ? 'Signing in…' : 'Sign In'}
+            {loading ? 'Signing in…' : 'Enter'}
           </button>
         </form>
       </div>
