@@ -1,0 +1,87 @@
+<h2>Three Approaches for Mission Control</h2>
+<p class="subtitle">Pick the architecture that fits how your brains work</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>The Dashboard Hub</h3>
+      <p><strong>What it is:</strong> Upgrade what you have. Keep the single-page dashboard but make it dynamic with Supabase. Each project gets a card that expands to show links, status, next steps. GitHub/Vercel data pulls in automatically. You update notes via a simple edit modal.</p>
+      <div class="pros-cons">
+        <div class="pros">
+          <h4>Pros</h4>
+          <ul>
+            <li>Fastest to build — evolves existing code</li>
+            <li>Everything on one screen, no navigation</li>
+            <li>Low learning curve — you already know it</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>Cons</h4>
+          <ul>
+            <li>Gets crowded with 50+ projects</li>
+            <li>Hard to add rich per-project detail</li>
+            <li>Single page gets long on mobile</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>The Command Center</h3>
+      <p><strong>What it is:</strong> A focused home screen showing your "right now" — top 3 active projects with their next steps, today's tasks, and a quick-pulse view. Tap any project to open its full detail page (links, status history, notes, GitHub data). A separate "All Projects" view with filtering by lifecycle stage (Idea → Exploring → Building → Live → Maintenance).</p>
+      <div class="pros-cons">
+        <div class="pros">
+          <h4>Pros</h4>
+          <ul>
+            <li>Home screen answers "what should I do right now?"</li>
+            <li>Scales to 50+ projects without overwhelm</li>
+            <li>Per-project pages have room for real detail</li>
+            <li>Great on mobile — focused screens, not endless scroll</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>Cons</h4>
+          <ul>
+            <li>More pages to build</li>
+            <li>Navigation adds a tiny bit of friction</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>The Notion-Killer</h3>
+      <p><strong>What it is:</strong> Full project management platform with kanban boards, timeline views, rich text notes per project, team assignment, commenting, activity feeds, and integrations. Basically build your own Notion/Linear.</p>
+      <div class="pros-cons">
+        <div class="pros">
+          <h4>Pros</h4>
+          <ul>
+            <li>Most powerful and flexible</li>
+            <li>Could replace multiple other tools</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>Cons</h4>
+          <ul>
+            <li>Weeks/months to build properly</li>
+            <li>You'd be maintaining a PM tool instead of building vet apps</li>
+            <li>Existing tools (Linear, Notion) already do this</li>
+            <li>Over-engineered for two people</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top: 2rem; padding: 1.5rem; background: rgba(255,255,255,0.05); border-radius: 12px; border-left: 4px solid #10b981;">
+  <h3 style="margin-top: 0;">My Recommendation: B — The Command Center</h3>
+  <p style="margin: 0;">It directly solves your two pain points (where did I leave off + everything in one place) without becoming a project in itself. The focused home screen is perfect for AuDHD brains — it tells you what to do, not everything you <em>could</em> do. And it scales beautifully as your ideas list grows.</p>
+</div>

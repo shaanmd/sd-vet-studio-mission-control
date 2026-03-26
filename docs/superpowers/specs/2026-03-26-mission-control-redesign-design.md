@@ -2,7 +2,7 @@
 
 ## Overview
 
-Mission Control is a project management "second brain" for SD VetStudio — a two-person team (Dr Deb Prattley, veterinarian & educator, and Shaan Mocke, web designer/developer) building 50+ digital products in the veterinary and AI education space. Both are AuDHD GenX women who are also mobile vets, meaning they need a tool that works on mobile between patients, tells them exactly what to do next, and doesn't drain their limited mental energy.
+Mission Control is a project management "second brain" for SD VetStudio — a two-person team (Dr Deb Prattley, veterinarian & educator, and Shaan Mocke, veterinarian & web developer) building 50+ digital products in the veterinary and AI education space. Both are GenX women who are also mobile vets, meaning they need a tool that works on mobile between patients, tells them exactly what to do next, and doesn't drain their limited mental energy.
 
 ### Core Pain Points Solved
 

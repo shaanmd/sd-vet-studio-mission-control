@@ -1,0 +1,170 @@
+<h2>Home Screen v2: Light Theme + Personal Tasks</h2>
+<p class="subtitle">Light theme, next 3 tasks per person, 1 next step per project</p>
+
+<div class="mockup">
+  <div class="mockup-header">Mission Control — Home (Mobile View)</div>
+  <div class="mockup-body" style="max-width: 400px; margin: 0 auto; background: #F5F0E8; color: #2C3E50; font-family: system-ui; padding: 0;">
+
+    <!-- Header -->
+    <div style="padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.08); background: white;">
+      <div>
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #1E6B5E; font-weight: 600;">SD VetStudio</div>
+        <div style="font-size: 20px; font-weight: 700; color: #2C3E50;">Mission Control</div>
+      </div>
+      <div style="font-size: 13px; color: #8899a6;">Thu 27 Mar</div>
+    </div>
+
+    <!-- Your Tasks Section -->
+    <div style="padding: 16px 20px 8px;">
+      <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #D4A853; margin-bottom: 12px; font-weight: 600;">Your Next 3</div>
+
+      <!-- Tabs for Deb / Shaan -->
+      <div style="display: flex; gap: 0; margin-bottom: 12px;">
+        <div style="flex: 1; padding: 10px; text-align: center; background: #1E6B5E; color: white; border-radius: 8px 0 0 8px; font-size: 13px; font-weight: 600;">Deb</div>
+        <div style="flex: 1; padding: 10px; text-align: center; background: white; color: #8899a6; border-radius: 0 8px 8px 0; font-size: 13px; font-weight: 600; border: 1px solid rgba(0,0,0,0.1); border-left: none;">Shaan</div>
+      </div>
+
+      <!-- Deb's Tasks -->
+      <div style="background: white; border-radius: 12px; border: 1px solid rgba(0,0,0,0.08); overflow: hidden;">
+        <div style="padding: 12px 14px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(0,0,0,0.05);">
+          <div style="width: 22px; height: 22px; border-radius: 6px; border: 2px solid #1E6B5E; flex-shrink: 0;"></div>
+          <div style="flex: 1;">
+            <div style="font-size: 14px; font-weight: 500;">Write first SynAIpseVet newsletter</div>
+            <div style="font-size: 11px; color: #8899a6; margin-top: 2px;">SynAIpseVet · Content</div>
+          </div>
+        </div>
+        <div style="padding: 12px 14px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(0,0,0,0.05);">
+          <div style="width: 22px; height: 22px; border-radius: 6px; border: 2px solid #1E6B5E; flex-shrink: 0;"></div>
+          <div style="flex: 1;">
+            <div style="font-size: 14px; font-weight: 500;">Review 6WSD Module 3 content</div>
+            <div style="font-size: 11px; color: #8899a6;">6WSD Course · Education</div>
+          </div>
+        </div>
+        <div style="padding: 12px 14px; display: flex; align-items: center; gap: 10px;">
+          <div style="width: 22px; height: 22px; border-radius: 6px; border: 2px solid #1E6B5E; flex-shrink: 0;"></div>
+          <div style="flex: 1;">
+            <div style="font-size: 14px; font-weight: 500;">Film rehab protocol demo video</div>
+            <div style="font-size: 11px; color: #8899a6;">CCL Rehab · Content</div>
+          </div>
+          <div style="font-size: 10px; background: rgba(212,168,83,0.15); color: #b45309; padding: 2px 6px; border-radius: 4px; white-space: nowrap;">Shaan too</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- What Shaan's view would look like (note) -->
+    <div style="padding: 4px 20px 12px;">
+      <div style="font-size: 11px; color: #8899a6; font-style: italic; text-align: center;">↑ Tap "Shaan" tab to see Shaan's top 3 · Shared tasks show "Deb too" badge</div>
+    </div>
+
+    <!-- Focus Projects -->
+    <div style="padding: 8px 20px 16px;">
+      <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #D4A853; margin-bottom: 12px; font-weight: 600;">Focus Projects</div>
+
+      <!-- Project 1 -->
+      <div style="background: white; border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; padding: 14px; margin-bottom: 10px; cursor: pointer;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <div style="font-weight: 600; font-size: 15px; color: #2C3E50;">6WSD Course Platform</div>
+          <span style="background: #1E6B5E; color: white; font-size: 10px; padding: 2px 8px; border-radius: 99px;">BUILDING</span>
+        </div>
+        <div style="font-size: 12px; color: #8899a6; margin-bottom: 8px;">Last commit 2h ago · Deployed ✓</div>
+        <div style="background: rgba(212,168,83,0.08); border-radius: 8px; padding: 10px; display: flex; align-items: flex-start; gap: 8px;">
+          <span style="color: #D4A853; font-size: 14px;">→</span>
+          <div style="font-size: 13px; color: #b45309;"><strong>Next:</strong> Wire up Supabase auth for student login</div>
+        </div>
+        <div style="font-size: 11px; color: #8899a6; margin-top: 8px; text-align: right;">Tap for full details + all tasks →</div>
+      </div>
+
+      <!-- Project 2 -->
+      <div style="background: white; border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; padding: 14px; margin-bottom: 10px; cursor: pointer;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <div style="font-weight: 600; font-size: 15px; color: #2C3E50;">SynAIpseVet</div>
+          <span style="background: #059669; color: white; font-size: 10px; padding: 2px 8px; border-radius: 99px;">LIVE</span>
+        </div>
+        <div style="font-size: 12px; color: #8899a6; margin-bottom: 8px;">12 waitlist signups this week</div>
+        <div style="background: rgba(212,168,83,0.08); border-radius: 8px; padding: 10px; display: flex; align-items: flex-start; gap: 8px;">
+          <span style="color: #D4A853; font-size: 14px;">→</span>
+          <div style="font-size: 13px; color: #b45309;"><strong>Next:</strong> Write first newsletter for waitlist</div>
+        </div>
+        <div style="font-size: 11px; color: #8899a6; margin-top: 8px; text-align: right;">Tap for full details + all tasks →</div>
+      </div>
+
+      <!-- Project 3 -->
+      <div style="background: white; border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; padding: 14px; margin-bottom: 10px; cursor: pointer;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <div style="font-weight: 600; font-size: 15px; color: #2C3E50;">VetRoute</div>
+          <span style="background: #b45309; color: white; font-size: 10px; padding: 2px 8px; border-radius: 99px;">EXPLORING</span>
+        </div>
+        <div style="font-size: 12px; color: #8899a6; margin-bottom: 8px;">Last commit 3 days ago</div>
+        <div style="background: rgba(212,168,83,0.08); border-radius: 8px; padding: 10px; display: flex; align-items: flex-start; gap: 8px;">
+          <span style="color: #D4A853; font-size: 14px;">→</span>
+          <div style="font-size: 13px; color: #b45309;"><strong>Next:</strong> Add mileage tracking feature scope</div>
+        </div>
+        <div style="font-size: 11px; color: #8899a6; margin-top: 8px; text-align: right;">Tap for full details + all tasks →</div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div style="padding: 0 20px 16px;">
+      <div style="display: flex; gap: 8px;">
+        <div style="flex: 1; background: white; border: 1px solid rgba(0,0,0,0.08); border-radius: 10px; padding: 12px; text-align: center; font-size: 11px; color: #8899a6; cursor: pointer;">
+          <div style="font-size: 18px; margin-bottom: 4px;">📥</div>
+          Quick Add
+        </div>
+        <div style="flex: 1; background: white; border: 1px solid rgba(0,0,0,0.08); border-radius: 10px; padding: 12px; text-align: center; font-size: 11px; color: #8899a6; cursor: pointer;">
+          <div style="font-size: 18px; margin-bottom: 4px;">📂</div>
+          All Projects
+        </div>
+        <div style="flex: 1; background: white; border: 1px solid rgba(0,0,0,0.08); border-radius: 10px; padding: 12px; text-align: center; font-size: 11px; color: #8899a6; cursor: pointer;">
+          <div style="font-size: 18px; margin-bottom: 4px;">🔗</div>
+          Resources
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Nav -->
+    <div style="background: white; border-top: 1px solid rgba(0,0,0,0.08); display: flex; padding: 12px 0;">
+      <div style="flex: 1; text-align: center; color: #1E6B5E; font-size: 11px; font-weight: 600;">
+        <div style="font-size: 18px; margin-bottom: 2px;">🏠</div>Home
+      </div>
+      <div style="flex: 1; text-align: center; color: #8899a6; font-size: 11px;">
+        <div style="font-size: 18px; margin-bottom: 2px;">📂</div>Projects
+      </div>
+      <div style="flex: 1; text-align: center; color: #8899a6; font-size: 11px;">
+        <div style="font-size: 18px; margin-bottom: 2px;">✏️</div>Log
+      </div>
+      <div style="flex: 1; text-align: center; color: #8899a6; font-size: 11px;">
+        <div style="font-size: 18px; margin-bottom: 2px;">⚙️</div>Settings
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div style="margin-top: 2rem;">
+  <h3>What Changed</h3>
+  <div class="section">
+    <ul style="line-height: 1.8;">
+      <li><strong>Light theme</strong> — cream background (#F5F0E8) with white cards. Easy on GenX eyes.</li>
+      <li><strong>"Your Next 3" section</strong> — Deb/Shaan tabs at the top. Each person sees their 3 priority tasks. Tasks can be tagged <em>"Shaan too"</em> or <em>"Deb too"</em> for shared work.</li>
+      <li><strong>1 next step per project stays</strong> — the gold arrow. Tap the project card to drill into full task list, links, notes, history.</li>
+      <li><strong>Personal tasks link to projects</strong> — each task shows which project it belongs to, so you always have context.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="yes" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content">
+      <h3>Yes, home screen approved</h3>
+      <p>Move on to the project detail page</p>
+    </div>
+  </div>
+  <div class="option" data-choice="tweaks" onclick="toggleSelect(this)">
+    <div class="letter">~</div>
+    <div class="content">
+      <h3>Close, but needs tweaks</h3>
+      <p>I'll tell you what to change</p>
+    </div>
+  </div>
+</div>
