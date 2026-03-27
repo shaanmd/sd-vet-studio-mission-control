@@ -9,12 +9,12 @@ interface StageFilterProps {
 }
 
 const stages: { key: Stage | 'all'; label: string; icon: string }[] = [
-  { key: 'all', label: 'All', icon: '' },
-  { key: 'inbox', label: 'Inbox', icon: '\uD83D\uDCE5' },
-  { key: 'someday', label: 'Someday', icon: '\uD83D\uDCA4' },
-  { key: 'exploring', label: 'Exploring', icon: '\uD83D\uDD0D' },
-  { key: 'building', label: 'Building', icon: '\uD83D\uDD28' },
   { key: 'live', label: 'Live', icon: '\uD83D\uDFE2' },
+  { key: 'building', label: 'Building', icon: '\uD83D\uDD28' },
+  { key: 'exploring', label: 'Exploring', icon: '\uD83D\uDD0D' },
+  { key: 'someday', label: 'Someday', icon: '\uD83D\uDCA4' },
+  { key: 'inbox', label: 'Inbox', icon: '\uD83D\uDCE5' },
+  { key: 'all', label: 'All', icon: '' },
   { key: 'maintenance', label: 'Maintenance', icon: '\uD83D\uDD27' },
 ]
 

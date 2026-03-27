@@ -102,19 +102,21 @@ export default function KeyLinks({
               disabled={adding || !label.trim() || !url.trim()}
               className="text-xs font-medium px-3 py-1.5 rounded-lg bg-[#1E6B5E] text-white disabled:opacity-50"
             >
-              {adding ? '...' : 'Save'}
+              {adding ? 'Saving...' : 'Save'}
             </button>
-            <button
-              onClick={() => {
-                setLabel('')
-                setUrl('')
-                setIcon('')
-                setShowAddForm(false)
-              }}
-              className="text-xs font-medium px-3 py-1.5 rounded-lg bg-black/5 text-[#2C3E50]"
-            >
-              Cancel
-            </button>
+            {!adding && (
+              <button
+                onClick={() => {
+                  setLabel('')
+                  setUrl('')
+                  setIcon('')
+                  setShowAddForm(false)
+                }}
+                className="text-xs font-medium px-3 py-1.5 rounded-lg bg-black/5 text-[#2C3E50]"
+              >
+                Cancel
+              </button>
+            )}
           </div>
         </div>
       )}
