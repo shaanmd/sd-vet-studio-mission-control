@@ -78,8 +78,9 @@ export default function ProjectHeader({ project }: { project: Project }) {
         <button
           onClick={handleTogglePin}
           disabled={pinLoading}
-          className="text-xl shrink-0"
+          className="text-xl shrink-0 p-1.5 rounded-lg hover:bg-black/5 active:bg-black/10 transition-colors cursor-pointer disabled:opacity-50"
           aria-label={pinned ? 'Unpin project' : 'Pin project'}
+          title={pinned ? 'Unpin from Focus' : 'Pin to Focus (max 3)'}
         >
           {pinned ? '\u2B50' : '\u2606'}
         </button>
