@@ -1,9 +1,9 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
-import { User, AuthChangeEvent, Session } from '@supabase/supabase-js'
+import { createContext, useContext, useEffect, useState, useRef } from 'react'
+import type { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
-import { Profile } from '@/lib/types/database'
+import type { Profile } from '@/lib/types/database'
 
 interface AuthContextValue {
   user: User | null
@@ -23,27 +23,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
+  const initialized = useRef(false)
 
   useEffect(() => {
+    if (initialized.current) return
+    initialized.current = true
+
     const supabase = createClient()
 
+    async function loadSession() {
+      const { data } = await supabase.auth.getSession()
+      const currentUser = data.session?.user ?? null
+      setUser(currentUser)
+
+      if (currentUser) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', currentUser.id)
+          .single()
+        setProfile((profileData as Profile) ?? null)
+      }
+      setLoading(false)
+    }
+
+    loadSession()
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event: AuthChangeEvent, session: Session | null) => {
-        const currentUser = session?.user ?? null
+      async (_event: string, session: unknown) => {
+        const s = session as { user: User } | null
+        const currentUser = s?.user ?? null
         setUser(currentUser)
 
         if (currentUser) {
-          const { data } = await supabase
+          const { data: profileData } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', currentUser.id)
             .single()
-          setProfile(data ?? null)
+          setProfile((profileData as Profile) ?? null)
         } else {
           setProfile(null)
         }
-
-        setLoading(false)
       }
     )
 

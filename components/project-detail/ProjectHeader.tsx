@@ -38,7 +38,7 @@ export default function ProjectHeader({ project }: { project: Project }) {
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err)
       if (message.toLowerCase().includes('max') || message.toLowerCase().includes('limit')) {
-        alert('Maximum 3 pinned projects allowed.')
+        alert('Maximum 5 pinned projects allowed.')
       } else {
         alert('Failed to update pin status.')
       }
@@ -139,7 +139,7 @@ export default function ProjectHeader({ project }: { project: Project }) {
           disabled={pinLoading}
           className="text-xl shrink-0 p-1.5 rounded-lg hover:bg-black/5 active:bg-black/10 transition-colors cursor-pointer disabled:opacity-50"
           aria-label={pinned ? 'Unpin project' : 'Pin project'}
-          title={pinned ? 'Unpin from Focus' : 'Pin to Focus (max 3)'}
+          title={pinned ? 'Unpin from Focus' : 'Pin to Focus (max 5)'}
         >
           {pinned ? '\u2B50' : '\u2606'}
         </button>
