@@ -38,6 +38,17 @@ export async function completeTask(id: string, completedBy: string): Promise<voi
   if (error) throw error
 }
 
+export async function assignTask(taskId: string, assignedTo: string | null): Promise<void> {
+  const supabase = createClient()
+
+  const { error } = await supabase
+    .from('tasks')
+    .update({ assigned_to: assignedTo })
+    .eq('id', taskId)
+
+  if (error) throw error
+}
+
 export async function setNextStep(projectId: string, taskId: string): Promise<void> {
   const supabase = createClient()
 

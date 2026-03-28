@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/hooks/use-auth'
-import { createTask, completeTask, setNextStep } from '@/lib/mutations/tasks'
+import { createTask, completeTask, setNextStep, assignTask } from '@/lib/mutations/tasks'
 import type { Task, Profile } from '@/lib/types/database'
 
 const ENERGY_ICONS: Record<string, string> = {
@@ -25,6 +25,7 @@ export default function TaskList({
   const { user } = useAuth()
   const [showAddForm, setShowAddForm] = useState(false)
   const [newTitle, setNewTitle] = useState('')
+  const [newAssignee, setNewAssignee] = useState('')
   const [adding, setAdding] = useState(false)
 
   const profileMap = new Map(profiles.map((p) => [p.id, p]))
@@ -36,8 +37,13 @@ export default function TaskList({
     if (!newTitle.trim() || !user) return
     setAdding(true)
     try {
-      await createTask({ project_id: projectId, title: newTitle.trim() })
+      await createTask({
+        project_id: projectId,
+        title: newTitle.trim(),
+        assigned_to: newAssignee || undefined,
+      })
       setNewTitle('')
+      setNewAssignee('')
       setShowAddForm(false)
       router.refresh()
     } catch {
@@ -54,6 +60,15 @@ export default function TaskList({
       router.refresh()
     } catch {
       alert('Failed to complete task.')
+    }
+  }
+
+  async function handleAssign(taskId: string, assignedTo: string | null) {
+    try {
+      await assignTask(taskId, assignedTo)
+      router.refresh()
+    } catch {
+      alert('Failed to assign task.')
     }
   }
 
@@ -81,23 +96,35 @@ export default function TaskList({
       </div>
 
       {showAddForm && (
-        <div className="flex gap-2 mb-3">
-          <input
-            type="text"
-            value={newTitle}
-            onChange={(e) => setNewTitle(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-            placeholder="Task title..."
-            className="flex-1 text-sm border border-black/10 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#1E6B5E]/30"
-            autoFocus
-          />
-          <button
-            onClick={handleAdd}
-            disabled={adding || !newTitle.trim()}
-            className="text-xs font-medium px-3 py-1.5 rounded-lg bg-[#1E6B5E] text-white disabled:opacity-50"
+        <div className="space-y-2 mb-3">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+              placeholder="Task title..."
+              className="flex-1 text-sm border border-black/10 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#1E6B5E]/30"
+              autoFocus
+            />
+            <button
+              onClick={handleAdd}
+              disabled={adding || !newTitle.trim()}
+              className="text-xs font-medium px-3 py-1.5 rounded-lg bg-[#1E6B5E] text-white disabled:opacity-50"
+            >
+              {adding ? '...' : 'Save'}
+            </button>
+          </div>
+          <select
+            value={newAssignee}
+            onChange={(e) => setNewAssignee(e.target.value)}
+            className="text-xs border border-black/10 rounded-lg px-2 py-1.5 text-[#2C3E50] bg-white focus:outline-none focus:ring-1 focus:ring-[#1E6B5E]/30"
           >
-            {adding ? '...' : 'Save'}
-          </button>
+            <option value="">Unassigned</option>
+            {profiles.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
         </div>
       )}
 
@@ -132,11 +159,17 @@ export default function TaskList({
                 &rarr;
               </button>
             )}
-            {task.assigned_to && profileMap.has(task.assigned_to) && (
-              <span className="text-[10px] text-[#8899a6] shrink-0">
-                {profileMap.get(task.assigned_to)!.name}
-              </span>
-            )}
+            <select
+              value={task.assigned_to ?? ''}
+              onChange={(e) => handleAssign(task.id, e.target.value || null)}
+              className="text-[10px] text-[#8899a6] shrink-0 bg-transparent border-none cursor-pointer focus:outline-none"
+              title="Assign task"
+            >
+              <option value="">—</option>
+              {profiles.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
             {task.energy && (
               <span className="text-xs shrink-0">{ENERGY_ICONS[task.energy]}</span>
             )}

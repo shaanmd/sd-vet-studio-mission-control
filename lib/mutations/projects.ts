@@ -56,6 +56,22 @@ export async function toggleProjectPin(
   if (error) throw error
 }
 
+export async function updateProjectName(
+  id: string,
+  name: string,
+  emoji: string | null,
+  userId: string
+): Promise<void> {
+  const supabase = createClient()
+
+  const { error } = await supabase
+    .from('projects')
+    .update({ name, emoji, updated_by: userId })
+    .eq('id', id)
+
+  if (error) throw error
+}
+
 export async function updateProjectSummary(
   id: string,
   summary: string,
