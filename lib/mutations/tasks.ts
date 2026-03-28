@@ -10,12 +10,7 @@ export async function createTask(input: {
 }): Promise<void> {
   const supabase = createClient()
 
-  // Debug: check if client has auth session
-  const { data: { session } } = await supabase.auth.getSession()
-  console.log('[createTask] session:', session ? `authenticated as ${session.user.email}` : 'NO SESSION')
-
-  console.log('[createTask] inserting:', { project_id: input.project_id, title: input.title })
-  const { error, status } = await supabase
+  const { error } = await supabase
     .from('tasks')
     .insert({
       project_id: input.project_id,
@@ -25,7 +20,6 @@ export async function createTask(input: {
       energy: input.energy ?? null,
     })
 
-  console.log('[createTask] result:', { error, status })
   if (error) throw error
 }
 
