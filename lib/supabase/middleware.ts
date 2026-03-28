@@ -25,10 +25,14 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  const { data } = await supabase.auth.getClaims()
+  // getUser() validates the token AND refreshes it if expired.
+  // getClaims() only decodes the JWT without refreshing — causes session expiry.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   if (
-    !data &&
+    !user &&
     !request.nextUrl.pathname.startsWith('/login')
   ) {
     const url = request.nextUrl.clone()

@@ -20,7 +20,10 @@ export async function createTask(input: {
       energy: input.energy ?? null,
     })
 
-  if (error) throw error
+  if (error) {
+    console.error('[supabase mutation error]', error)
+    throw error
+  }
 }
 
 export async function completeTask(id: string, completedBy: string): Promise<void> {
@@ -35,7 +38,10 @@ export async function completeTask(id: string, completedBy: string): Promise<voi
     })
     .eq('id', id)
 
-  if (error) throw error
+  if (error) {
+    console.error('[supabase mutation error]', error)
+    throw error
+  }
 }
 
 export async function assignTask(taskId: string, assignedTo: string | null): Promise<void> {
@@ -46,7 +52,10 @@ export async function assignTask(taskId: string, assignedTo: string | null): Pro
     .update({ assigned_to: assignedTo })
     .eq('id', taskId)
 
-  if (error) throw error
+  if (error) {
+    console.error('[supabase mutation error]', error)
+    throw error
+  }
 }
 
 export async function setNextStep(projectId: string, taskId: string): Promise<void> {

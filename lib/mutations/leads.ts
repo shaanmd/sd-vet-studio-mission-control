@@ -24,7 +24,7 @@ export async function addLead(data: {
       added_by: data.added_by,
     })
 
-  if (error) throw error
+  if (error) { console.error("[supabase mutation error]", error); throw error; }
 }
 
 export async function promoteToBeta(leadId: string): Promise<void> {
@@ -39,5 +39,5 @@ export async function promoteToBeta(leadId: string): Promise<void> {
     })
     .eq('id', leadId)
 
-  if (error) throw error
+  if (error) { console.error("[supabase mutation error]", error); throw error; }
 }

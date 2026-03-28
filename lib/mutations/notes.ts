@@ -16,5 +16,5 @@ export async function addProjectNote(input: {
       note_type: 'note',
     })
 
-  if (error) throw error
+  if (error) { console.error("[supabase mutation error]", error); throw error; }
 }

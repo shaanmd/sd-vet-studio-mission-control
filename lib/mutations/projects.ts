@@ -38,7 +38,10 @@ export async function updateProjectStage(
     .update({ stage, updated_by: userId })
     .eq('id', id)
 
-  if (error) throw error
+  if (error) {
+    console.error('[supabase mutation error]', error)
+    throw error
+  }
 }
 
 export async function toggleProjectPin(
@@ -53,7 +56,10 @@ export async function toggleProjectPin(
     .update({ pinned, updated_by: userId })
     .eq('id', id)
 
-  if (error) throw error
+  if (error) {
+    console.error('[supabase mutation error]', error)
+    throw error
+  }
 }
 
 export async function updateProjectName(
@@ -69,7 +75,10 @@ export async function updateProjectName(
     .update({ name, emoji, updated_by: userId })
     .eq('id', id)
 
-  if (error) throw error
+  if (error) {
+    console.error('[supabase mutation error]', error)
+    throw error
+  }
 }
 
 export async function updateProjectSummary(
@@ -84,5 +93,8 @@ export async function updateProjectSummary(
     .update({ summary, updated_by: userId })
     .eq('id', id)
 
-  if (error) throw error
+  if (error) {
+    console.error('[supabase mutation error]', error)
+    throw error
+  }
 }

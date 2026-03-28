@@ -18,7 +18,7 @@ export async function createProjectLink(input: {
       is_auto: false,
     })
 
-  if (error) throw error
+  if (error) { console.error("[supabase mutation error]", error); throw error; }
 }
 
 export async function deleteProjectLink(id: string): Promise<void> {
@@ -29,5 +29,5 @@ export async function deleteProjectLink(id: string): Promise<void> {
     .delete()
     .eq('id', id)
 
-  if (error) throw error
+  if (error) { console.error("[supabase mutation error]", error); throw error; }
 }
