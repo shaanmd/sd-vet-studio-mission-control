@@ -24,12 +24,14 @@ export default function CreateProjectModal({ onClose }: CreateProjectModalProps)
   const [summary, setSummary] = useState('')
   const [stage, setStage] = useState<Stage>('inbox')
   const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!user || !name.trim()) return
 
     setSubmitting(true)
+    setError(null)
     try {
       const project = await createProject({
         name: name.trim(),
@@ -40,6 +42,7 @@ export default function CreateProjectModal({ onClose }: CreateProjectModalProps)
       router.push(`/projects/${project.id}`)
     } catch (err) {
       console.error('Failed to create project:', err)
+      setError(err instanceof Error ? err.message : 'Failed to create project. Please try again.')
       setSubmitting(false)
     }
   }
@@ -115,6 +118,10 @@ export default function CreateProjectModal({ onClose }: CreateProjectModalProps)
               ))}
             </div>
           </div>
+
+          {error && (
+            <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
+          )}
 
           {/* Submit */}
           <button
