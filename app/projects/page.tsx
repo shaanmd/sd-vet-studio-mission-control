@@ -1,9 +1,9 @@
-import { getProjects, getProjectCounts } from '@/lib/queries/projects'
+import { getProjectsWithNextStep, getProjectCounts } from '@/lib/queries/projects'
 import ProjectList from '@/components/projects/ProjectList'
 
 export default async function ProjectsPage() {
   const [projects, counts] = await Promise.all([
-    getProjects(),
+    getProjectsWithNextStep(),
     getProjectCounts(),
   ])
 

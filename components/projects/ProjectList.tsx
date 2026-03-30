@@ -2,14 +2,16 @@
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
-import type { Project, Stage } from '@/lib/types/database'
+import type { Project, Stage, ProjectWithDetails } from '@/lib/types/database'
 import { formatDistanceToNow } from '@/lib/utils/dates'
 import StageFilter from './StageFilter'
 import CreateProjectModal from './CreateProjectModal'
 import StageTriage from './StageTriage'
+import ViewToggle from './ViewToggle'
+import KanbanBoard from './KanbanBoard'
 
 interface ProjectListProps {
-  projects: Project[]
+  projects: ProjectWithDetails[]
   counts: Record<string, number>
 }
 
@@ -30,6 +32,7 @@ export default function ProjectList({ projects, counts }: ProjectListProps) {
   const [search, setSearch] = useState('')
   const [showCreate, setShowCreate] = useState(false)
   const [triaging, setTriaging] = useState<{ id: string; name: string } | null>(null)
+  const [view, setView] = useState<'list' | 'board'>('list')
 
   const filtered = useMemo(() => {
     let list = projects
@@ -66,8 +69,8 @@ export default function ProjectList({ projects, counts }: ProjectListProps) {
 
   return (
     <div className="space-y-4">
-      {/* Search + New button */}
-      <div className="flex gap-2">
+      {/* Search + Toggle + New button */}
+      <div className="flex gap-2 items-center">
         <div className="relative flex-1">
           <svg
             className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8899a6]"
@@ -90,6 +93,7 @@ export default function ProjectList({ projects, counts }: ProjectListProps) {
             className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-black/8 bg-white text-[#2C3E50] placeholder:text-[#8899a6]/60 focus:outline-none focus:ring-2 focus:ring-[#1E6B5E]/30 focus:border-[#1E6B5E]"
           />
         </div>
+        <ViewToggle view={view} onToggle={setView} />
         <button
           onClick={() => setShowCreate(true)}
           className="flex-shrink-0 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-colors"
@@ -103,7 +107,9 @@ export default function ProjectList({ projects, counts }: ProjectListProps) {
       <StageFilter activeFilter={filter} counts={counts} onFilter={setFilter} />
 
       {/* Project groups */}
-      {grouped.length === 0 ? (
+      {view === 'board' ? (
+        <KanbanBoard projects={filtered} />
+      ) : grouped.length === 0 ? (
         <div className="bg-white rounded-xl border border-black/8 p-8 text-center">
           <p className="text-sm text-[#8899a6]">
             {search.trim() ? 'No projects match your search.' : 'No projects yet.'}

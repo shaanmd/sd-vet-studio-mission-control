@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import type { Stage, ProjectWithDetails } from '@/lib/types/database'
+import type { Stage, ProjectWithDetails, Project, Task } from '@/lib/types/database'
 
 export async function getProjects(stage?: Stage): Promise<ProjectWithDetails[]> {
   const supabase = await createClient()
@@ -93,6 +93,27 @@ export async function getProject(id: string): Promise<ProjectWithDetails | null>
       ? github_cache[0]
       : null,
   } as ProjectWithDetails
+}
+
+export async function getProjectsWithNextStep(): Promise<ProjectWithDetails[]> {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('projects')
+    .select('*, tasks(*)')
+    .neq('stage', 'archived')
+    .order('updated_at', { ascending: false })
+
+  if (error) throw error
+
+  return ((data ?? []) as (Project & { tasks: Task[] })[]).map((project) => {
+    const { tasks, ...rest } = project
+    return {
+      ...rest,
+      tasks,
+      next_step: tasks?.find((t) => t.is_next_step && !t.completed) ?? null,
+    } as ProjectWithDetails
+  })
 }
 
 export async function getProjectCounts(): Promise<Record<string, number>> {
