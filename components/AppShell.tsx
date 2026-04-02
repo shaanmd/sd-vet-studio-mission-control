@@ -14,9 +14,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthProvider>
-      <div className="flex min-h-screen">
+      <div className="flex min-h-screen bg-[#F5F0E8]">
         <Sidebar />
-        <main className="flex-1 pb-20 md:pb-0">{children}</main>
+        <main className="flex-1 pb-20 md:pb-0">
+          {children}
+        </main>
         <BottomNav />
       </div>
     </AuthProvider>
