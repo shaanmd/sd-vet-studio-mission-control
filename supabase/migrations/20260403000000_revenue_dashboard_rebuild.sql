@@ -91,18 +91,23 @@ ALTER TABLE project_analysis ENABLE ROW LEVEL SECURITY;
 ALTER TABLE content_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE lead_notes ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Authenticated users have full access" ON expenses;
 CREATE POLICY "Authenticated users have full access" ON expenses
   FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
+DROP POLICY IF EXISTS "Authenticated users have full access" ON revenue_entries;
 CREATE POLICY "Authenticated users have full access" ON revenue_entries
   FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
+DROP POLICY IF EXISTS "Authenticated users have full access" ON project_analysis;
 CREATE POLICY "Authenticated users have full access" ON project_analysis
   FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
+DROP POLICY IF EXISTS "Authenticated users have full access" ON content_items;
 CREATE POLICY "Authenticated users have full access" ON content_items
   FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
+DROP POLICY IF EXISTS "Authenticated users have full access" ON lead_notes;
 CREATE POLICY "Authenticated users have full access" ON lead_notes
   FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
