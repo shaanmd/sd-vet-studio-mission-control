@@ -1,44 +1,38 @@
-import type { ActivityLogWithDetails } from '@/lib/types/database'
-import { formatDistanceToNow } from '@/lib/utils/dates'
-import Link from 'next/link'
+import type { ActivityLogEntry } from '@/lib/types/database'
 
-interface ActivityFeedProps {
-  entries: ActivityLogWithDetails[]
+const ACTION_EMOJI: Record<string, string> = {
+  task_completed: '✅',
+  stage_changed: '🔄',
+  deployed: '🚀',
+  note_added: '📝',
+  project_created: '✨',
+  revenue_logged: '💰',
+  default: '•',
 }
 
-const actionIcons: Record<string, string> = {
-  task_completed: '\u2705',
-  note_added: '\uD83D\uDCDD',
-  stage_changed: '\uD83D\uDD04',
-  deployed: '\uD83D\uDE80',
-  project_created: '\u2728',
-  project_pinned: '\u2B50',
+interface ActivityWithRelations extends ActivityLogEntry {
+  project: { name: string; emoji: string } | null
+  actor: { name: string } | null
 }
 
-export function ActivityFeed({ entries }: ActivityFeedProps) {
-  if (entries.length === 0) {
-    return (
-      <div className="bg-white rounded-xl border border-black/[0.08] p-8 text-center">
-        <p className="text-sm text-[#8899a6]">Nothing here yet — complete your first task and it&apos;ll show up here!</p>
-      </div>
-    )
+interface Props { activities: ActivityWithRelations[] }
+
+export default function ActivityFeed({ activities }: Props) {
+  if (activities.length === 0) {
+    return <p className="text-center text-gray-400 py-8 text-sm">No activity yet — complete a task to see it here!</p>
   }
-
   return (
-    <div className="bg-white rounded-xl border border-black/[0.08] overflow-hidden">
-      {entries.map((entry, i) => (
-        <div key={entry.id} className={`flex items-start gap-2.5 px-3.5 py-3 ${i < entries.length - 1 ? 'border-b border-black/5' : ''}`}>
-          <span className="text-base mt-0.5">{actionIcons[entry.action] ?? '\uD83D\uDCCB'}</span>
+    <div className="flex flex-col gap-2">
+      {activities.map(activity => (
+        <div key={activity.id} className="bg-white rounded-xl px-4 py-3 flex items-start gap-3">
+          <span className="text-lg mt-0.5">{ACTION_EMOJI[activity.action] ?? ACTION_EMOJI.default}</span>
           <div className="flex-1 min-w-0">
-            <div className="text-[13px] text-[#2C3E50]">{entry.description}</div>
-            <div className="flex items-center gap-1.5 mt-1 text-[11px] text-[#8899a6]">
-              {entry.project && (
-                <Link href={`/projects/${entry.project.id}`} className="text-[#1E6B5E] hover:underline">
-                  {entry.project.emoji} {entry.project.name}
-                </Link>
-              )}
-              {entry.actor && <span>&middot; {entry.actor.name}</span>}
-              <span>&middot; {formatDistanceToNow(entry.created_at)}</span>
+            <div className="text-sm text-gray-800">{activity.description}</div>
+            <div className="text-xs text-gray-400 mt-0.5 flex items-center gap-1.5">
+              {activity.project && <span>{activity.project.emoji} {activity.project.name}</span>}
+              {activity.actor && <><span>·</span><span>{activity.actor.name}</span></>}
+              <span>·</span>
+              <span>{new Date(activity.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
             </div>
           </div>
         </div>

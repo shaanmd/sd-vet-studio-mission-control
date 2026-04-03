@@ -1,38 +1,36 @@
-import type { ActivityLogWithDetails } from '@/lib/types/database'
-import { formatDistanceToNow } from '@/lib/utils/dates'
-import Link from 'next/link'
+import type { ActivityLogEntry } from '@/lib/types/database'
 
-interface WinWallProps {
-  wins: ActivityLogWithDetails[]
+interface ActivityWithRelations extends ActivityLogEntry {
+  project: { name: string; emoji: string } | null
+  actor: { name: string } | null
 }
 
-export function WinWall({ wins }: WinWallProps) {
+interface Props { wins: ActivityWithRelations[] }
+
+export default function WinWall({ wins }: Props) {
   if (wins.length === 0) {
     return (
-      <div className="bg-white rounded-xl border border-black/[0.08] p-8 text-center">
-        <div className="text-4xl mb-3">{'\uD83C\uDFC6'}</div>
-        <p className="text-sm text-[#8899a6]">Your wins will appear here. Go ship something!</p>
+      <div className="text-center py-12">
+        <div className="text-4xl mb-3">🏆</div>
+        <p className="text-gray-400 text-sm">Complete your first task and it'll show up here! 🎉</p>
       </div>
     )
   }
-
   return (
-    <div className="space-y-2">
-      {wins.map((win) => (
-        <div key={win.id} className="bg-white rounded-xl border border-[#D4A853]/20 p-3.5">
-          <div className="flex items-start gap-2.5">
-            <span className="text-lg">{'\uD83C\uDF89'}</span>
-            <div className="flex-1">
-              <div className="text-[13px] font-medium text-[#2C3E50]">{win.description}</div>
-              <div className="flex items-center gap-1.5 mt-1 text-[11px] text-[#8899a6]">
-                {win.project && (
-                  <Link href={`/projects/${win.project.id}`} className="text-[#1E6B5E] hover:underline">
-                    {win.project.emoji} {win.project.name}
-                  </Link>
-                )}
-                {win.actor && <span>&middot; {win.actor.name}</span>}
-                <span>&middot; {formatDistanceToNow(win.created_at)}</span>
-              </div>
+    <div className="flex flex-col gap-2">
+      {wins.map(win => (
+        <div key={win.id} className={`rounded-xl px-4 py-3 flex items-start gap-3 ${
+          win.action === 'revenue_logged' ? 'bg-amber-50 border border-amber-100' : 'bg-teal-50 border border-teal-100'
+        }`}>
+          <span className="text-lg mt-0.5">
+            {win.action === 'revenue_logged' ? '💰' : win.action === 'stage_changed' ? '🚀' : '✅'}
+          </span>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-medium text-gray-800">{win.description}</div>
+            <div className="text-xs text-gray-500 mt-0.5 flex items-center gap-1.5">
+              {win.project && <span>{win.project.emoji} {win.project.name}</span>}
+              <span>·</span>
+              <span>{new Date(win.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</span>
             </div>
           </div>
         </div>
