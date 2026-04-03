@@ -1,22 +1,8 @@
-import { getActivityLog, getWins } from '@/lib/queries/activity'
-import { ActivityFeed } from '@/components/log/ActivityFeed'
-import { WinWall } from '@/components/log/WinWall'
-import { LogTabs } from '@/components/log/LogTabs'
-
-export default async function LogPage() {
-  const [activity, wins] = await Promise.all([
-    getActivityLog(),
-    getWins(),
-  ])
-
+export default function LogPage() {
   return (
-    <div className="p-5 max-w-lg mx-auto md:max-w-2xl">
-      <h1 className="text-xl font-bold text-[#2C3E50] mb-4">Activity</h1>
-      <LogTabs
-        activityContent={<ActivityFeed entries={activity} />}
-        winContent={<WinWall wins={wins} />}
-        winCount={wins.length}
-      />
+    <div className="p-6">
+      <h1 className="text-2xl font-bold text-teal-700 mb-2">🏆 Log & Wins</h1>
+      <p className="text-gray-500">Activity log and win wall — coming in Phase 4.</p>
     </div>
   )
 }
