@@ -1,5 +1,5 @@
 // lib/revenue.ts
-import type { EnergyLevel, RevenueScore, MoneyMove } from './types'
+import type { Energy as EnergyLevel, RevenueScore, MoneyMove } from '@/lib/types/database'
 
 const REVENUE_RANK: Record<RevenueScore, number> = {
   high: 3,
@@ -30,7 +30,7 @@ export function sortMoneyMoves(moves: MoneyMove[]): MoneyMove[] {
     if (a.task.is_next_step !== b.task.is_next_step) {
       return a.task.is_next_step ? -1 : 1
     }
-    // 4. Low-energy tasks first (easiest to start)
-    return ENERGY_RANK[b.task.energy] - ENERGY_RANK[a.task.energy]
+    // 4. Low-energy tasks first (easiest to start); null energy sorts last
+    return (ENERGY_RANK[b.task.energy ?? 'high'] ?? 0) - (ENERGY_RANK[a.task.energy ?? 'high'] ?? 0)
   })
 }

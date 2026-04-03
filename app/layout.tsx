@@ -5,6 +5,7 @@ import AppShell from "@/components/AppShell";
 export const metadata: Metadata = {
   title: "SD VetStudio Mission Control",
   description: "Project management second brain for SD VetStudio",
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({

@@ -1,7 +1,7 @@
 // lib/__tests__/finance.test.ts
 import { describe, it, expect } from 'vitest'
 import { getExpenseSummary, getRevenueTotal } from '../finance'
-import type { Expense, RevenueEntry } from '../types'
+import type { Expense, RevenueEntry } from '@/lib/types/database'
 
 const makeExpense = (overrides: Partial<Expense> = {}): Expense => ({
   id: 'e1',

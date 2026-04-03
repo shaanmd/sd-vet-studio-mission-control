@@ -38,6 +38,32 @@ export type ActivityAction =
   | 'deployed'
   | 'project_created'
   | 'project_pinned'
+  | 'revenue_logged'
+
+export type RevenueScore = 'low' | 'medium' | 'high'
+
+export type RevenueStream =
+  | 'course'
+  | 'subscription'
+  | 'inapp'
+  | 'consulting'
+  | 'sponsorship'
+  | 'affiliate'
+  | 'other'
+
+export type PaidBy = 'shaan' | 'deb' | 'split'
+
+export type ExpenseCategory =
+  | 'hosting'
+  | 'domains'
+  | 'subscriptions'
+  | 'tools_ai'
+  | 'marketing'
+  | 'other'
+
+export type Platform = 'instagram' | 'tiktok' | 'email' | 'youtube' | 'other'
+
+export type ContentStatus = 'draft' | 'scheduled' | 'published'
 
 // ============================================================
 // Core Table Interfaces
@@ -59,10 +85,13 @@ export interface Project {
   summary: string | null
   stage: Stage
   pinned: boolean
+  revenue_score: RevenueScore
+  revenue_stream: RevenueStream | null
+  revenue_per_conversion: number | null
   github_repo: string | null
   vercel_project_id: string | null
   live_url: string | null
-  created_by: string
+  created_by: string | null
   updated_by: string | null
   created_at: string
   updated_at: string
@@ -171,6 +200,65 @@ export interface GitHubCache {
   deploy_status: DeployStatus | null
   deploy_url: string | null
   updated_at: string
+}
+
+export interface Expense {
+  id: string
+  description: string
+  amount: number
+  category: ExpenseCategory
+  project_id: string | null
+  paid_by: PaidBy
+  expense_date: string
+  created_by: string | null
+  created_at: string
+}
+
+export interface RevenueEntry {
+  id: string
+  description: string
+  amount: number
+  stream: RevenueStream
+  project_id: string | null
+  revenue_date: string
+  created_by: string | null
+  created_at: string
+}
+
+export interface ProjectAnalysis {
+  id: string
+  project_id: string
+  income_potential: string | null
+  build_difficulty: string | null
+  recommendation: string | null
+  raw_output: string | null
+  analysed_at: string
+  analysed_by: string | null
+}
+
+export interface ContentItem {
+  id: string
+  project_id: string | null
+  platform: Platform
+  description: string
+  scheduled_date: string | null
+  status: ContentStatus
+  created_by: string | null
+  created_at: string
+}
+
+export interface LeadNote {
+  id: string
+  lead_id: string
+  author_id: string | null
+  content: string
+  created_at: string
+}
+
+// Composite type used by Home screen money moves list
+export interface MoneyMove {
+  task: Task
+  project: Project
 }
 
 // ============================================================

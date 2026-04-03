@@ -1,5 +1,5 @@
 // lib/finance.ts
-import type { Expense, RevenueEntry, ExpenseCategory } from './types'
+import type { Expense, RevenueEntry, ExpenseCategory } from '@/lib/types/database'
 
 export interface ExpenseSummary {
   total: number

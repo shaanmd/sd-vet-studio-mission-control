@@ -1,7 +1,7 @@
 // lib/__tests__/revenue.test.ts
 import { describe, it, expect } from 'vitest'
 import { sortMoneyMoves } from '../revenue'
-import type { Project, Task, MoneyMove } from '../types'
+import type { Project, Task, MoneyMove } from '@/lib/types/database'
 
 const makeProject = (overrides: Partial<Project> = {}): Project => ({
   id: 'p1',
