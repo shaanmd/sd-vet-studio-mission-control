@@ -95,6 +95,18 @@ export async function getProject(id: string): Promise<ProjectWithDetails | null>
   } as ProjectWithDetails
 }
 
+export async function getProjectTasks(projectId: string) {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('tasks')
+    .select('*')
+    .eq('project_id', projectId)
+    .order('is_next_step', { ascending: false })
+    .order('sort_order', { ascending: true })
+  if (error) throw error
+  return data as Task[]
+}
+
 export async function getProjectsWithNextStep(): Promise<ProjectWithDetails[]> {
   const supabase = await createClient()
 
