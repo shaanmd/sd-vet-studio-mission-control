@@ -135,3 +135,59 @@ export async function getProjectCounts(): Promise<Record<string, number>> {
 
   return counts
 }
+
+export async function getActiveTasksWithProjects(): Promise<Array<{ task: Task; project: Project }>> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('tasks')
+    .select('*, project:projects(*)')
+    .eq('completed', false)
+    .not('project_id', 'is', null)
+  if (error) throw error
+  const activeStages = ['exploring', 'building', 'live', 'maintenance']
+  return ((data ?? []) as unknown as Array<Task & { project: Project }>)
+    .filter((row) => row.project && activeStages.includes(row.project.stage))
+    .map((row) => ({ task: row as Task, project: row.project }))
+}
+
+export async function getProjectLinks(projectId: string) {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('project_links')
+    .select('*')
+    .eq('project_id', projectId)
+    .order('sort_order')
+  if (error) throw error
+  return data as import('@/lib/types/database').ProjectLink[]
+}
+
+export async function getProjectNotes(projectId: string) {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('project_notes')
+    .select('*, author:profiles(name)')
+    .eq('project_id', projectId)
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data as (import('@/lib/types/database').ProjectNote & { author: { name: string } | null })[]
+}
+
+export async function getProjectAnalysis(projectId: string) {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('project_analysis')
+    .select('*')
+    .eq('project_id', projectId)
+    .maybeSingle()
+  return data as import('@/lib/types/database').ProjectAnalysis | null
+}
+
+export async function getGithubCache(projectId: string) {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('github_cache')
+    .select('*')
+    .eq('project_id', projectId)
+    .maybeSingle()
+  return data as import('@/lib/types/database').GitHubCache | null
+}
