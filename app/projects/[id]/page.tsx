@@ -79,7 +79,16 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       </div>
 
       {/* AI Analysis */}
-      <AIAnalysisPanel projectId={id} analysis={analysis} onSave={handleSaveAnalysis} />
+      <AIAnalysisPanel
+        projectId={id}
+        projectName={project.name}
+        projectStage={project.stage}
+        projectSummary={project.summary}
+        projectRevenueScore={project.revenue_score}
+        pendingTasks={(tasks ?? []).filter(t => !t.completed).map(t => ({ title: t.title, completed: t.completed }))}
+        analysis={analysis}
+        onSave={handleSaveAnalysis}
+      />
 
       {/* Tasks */}
       <div className="bg-white rounded-xl p-4">
