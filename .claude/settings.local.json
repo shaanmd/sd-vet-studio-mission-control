@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(/c/Users/summe/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.7/skills/brainstorming/scripts/start-server.sh --project-dir /c/Users/summe/Projects/sd-vet-studio-mission-control)",
+      "Bash(xargs cat:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(mkdir -p /c/Users/summe/.config/superpowers/worktrees/sd-vet-studio-mission-control)",
+      "Bash(git worktree:*)",
+      "Read(//c/Users/summe/.config/superpowers/worktrees/sd-vet-studio-mission-control/revenue-dashboard-phase1/**)",
+      "Bash(npm install:*)",
+      "Bash(npm test:*)",
+      "Bash(npx supabase:*)",
+      "Bash(npx vitest:*)",
+      "Bash(base=\"C:/Users/summe/.config/superpowers/worktrees/sd-vet-studio-mission-control/revenue-dashboard-phase1\")",
+      "Bash(for f:*)",
+      "Bash(do)",
+      "Bash(echo \"=== $f ===\")",
+      "Read(//c/Users/summe/Projects/sd-vet-studio-mission-control/$base/**)",
+      "Bash(do echo:*)",
+      "Read(//c/Users/summe/.config/superpowers/worktrees/sd-vet-studio-mission-control/revenue-dashboard-phase1/app/$f/**)",
+      "Bash(done)",
+      "Bash(grep -r manifest.json C:/Users/summe/.config/superpowers/worktrees/sd-vet-studio-mission-control/revenue-dashboard-phase1 --include=*.html --include=*.tsx --include=*.ts)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(ls \"C:\\\\Users\\\\summe\\\\.config\\\\superpowers\\\\worktrees\\\\sd-vet-studio-mission-control\\\\revenue-dashboard-phase1\\\\components\\\\project-detail\"\" 2>/dev/null || echo \"DIR NOT FOUND \")",
+      "Bash(ls /c/Users/summe/.config/superpowers/worktrees/sd-vet-studio-mission-control/revenue-dashboard-phase1/app/api/projects/[id]/analysis/)",
+      "Bash(grep -l \"Lead\\\\|marketing\\\\|content_items\" \"C:\\\\Users\\\\summe\\\\.config\\\\superpowers\\\\worktrees\\\\sd-vet-studio-mission-control\\\\revenue-dashboard-phase1\\\\lib/queries/\"*.ts)",
+      "Bash(\"C:\\\\Users\\\\summe\\\\.config\\\\superpowers\\\\worktrees\\\\sd-vet-studio-mission-control\\\\revenue-dashboard-phase1\\\\app\\\\api\\\\auth\\\\signout\\\\route.ts\":*)",
+      "Bash(find /c/Users/summe/Projects/sd-vet-studio-mission-control -type f \\\\\\(-name *.sql -o -name *.toml -o -name migrations* \\\\\\))",
+      "Bash(xargs ls:*)",
+      "Bash(cat /c/Users/summe/Projects/sd-vet-studio-mission-control/app/projects/[id]/page.tsx)",
+      "Bash(mkdir -p \"C:/Users/summe/.config/superpowers/worktrees/sd-vet-studio-mission-control/phase5-ai/app/api/ai/next-step\")",
+      "Bash(mkdir -p \"C:/Users/summe/.config/superpowers/worktrees/sd-vet-studio-mission-control/phase5-ai/app/api/ai/win-summary\")",
+      "Bash(mkdir -p \"C:/Users/summe/.config/superpowers/worktrees/sd-vet-studio-mission-control/phase5-ai/app/api/ai/tag-energy\")",
+      "mcp__578723d2-f663-4fad-bdca-ebd4ac534a8d__get_runtime_logs"
+    ]
+  }
+}

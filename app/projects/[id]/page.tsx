@@ -6,6 +6,9 @@ import { getExpenses, getRevenueEntries } from '@/lib/queries/revenue'
 import { getExpenseSummary, getRevenueTotal } from '@/lib/finance'
 import NextStepCard from '@/components/project-detail/NextStepCard'
 import AIAnalysisPanel from '@/components/project-detail/AIAnalysisPanel'
+import ProjectEditButton from '@/components/project-detail/ProjectEditButton'
+import TaskList from '@/components/project-detail/TaskList'
+import NotesList from '@/components/project-detail/NotesList'
 
 export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -26,7 +29,6 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   if (!project) notFound()
 
   const nextStep = tasks.find(t => t.is_next_step && !t.completed) ?? null
-  const activeTasks = tasks.filter(t => !t.completed)
   const expenseSummary = getExpenseSummary(projectExpenses)
   const revenueTotal = getRevenueTotal(projectRevenue)
 
@@ -44,9 +46,12 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     <div className="max-w-lg mx-auto px-4 pt-6 pb-8 flex flex-col gap-4">
       {/* Header */}
       <div>
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-2xl">{project.emoji}</span>
-          <h1 className="text-xl font-bold text-gray-800">{project.name}</h1>
+        <div className="flex items-start justify-between gap-2 mb-1">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">{project.emoji}</span>
+            <h1 className="text-xl font-bold text-gray-800">{project.name}</h1>
+          </div>
+          <ProjectEditButton project={project} />
         </div>
         <div className="flex gap-2 text-sm">
           <span className="bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full font-medium">{project.stage}</span>
@@ -91,31 +96,10 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       />
 
       {/* Tasks */}
-      <div className="bg-white rounded-xl p-4">
-        <h3 className="font-semibold text-gray-700 mb-3">Tasks ({activeTasks.length})</h3>
-        {activeTasks.length === 0 && <p className="text-gray-400 text-sm">No tasks yet.</p>}
-        {activeTasks.map(task => (
-          <div key={task.id} className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0">
-            <div className="w-4 h-4 rounded border border-gray-300 shrink-0" />
-            <span className="text-sm text-gray-800 flex-1">{task.title}</span>
-            {task.is_next_step && <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">NEXT</span>}
-          </div>
-        ))}
-      </div>
+      <TaskList projectId={id} tasks={tasks} />
 
       {/* Notes */}
-      <div className="bg-white rounded-xl p-4">
-        <h3 className="font-semibold text-gray-700 mb-3">Notes</h3>
-        {notes.length === 0 && <p className="text-gray-400 text-sm">No notes yet.</p>}
-        {notes.slice(0, 5).map(note => (
-          <div key={note.id} className="py-2 border-b border-gray-50 last:border-0">
-            <p className="text-sm text-gray-800">{note.content}</p>
-            <p className="text-xs text-gray-400 mt-0.5">
-              {(note as any).author?.name ?? 'Auto'} · {new Date(note.created_at).toLocaleDateString('en-AU')}
-            </p>
-          </div>
-        ))}
-      </div>
+      <NotesList projectId={id} notes={notes as any} />
     </div>
   )
 }

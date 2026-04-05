@@ -1,196 +1,133 @@
 'use client'
-
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/lib/hooks/use-auth'
-import { createTask, completeTask, setNextStep, assignTask } from '@/lib/mutations/tasks'
-import type { Task, Profile } from '@/lib/types/database'
+import type { Task } from '@/lib/types/database'
 
-const ENERGY_ICONS: Record<string, string> = {
-  high: '\u26A1',
-  medium: '\u2615',
-  low: '\uD83D\uDECB\uFE0F',
-}
-
-export default function TaskList({
-  projectId,
-  tasks,
-  profiles,
-}: {
+interface Props {
   projectId: string
   tasks: Task[]
-  profiles: Profile[]
-}) {
+}
+
+export default function TaskList({ projectId, tasks }: Props) {
   const router = useRouter()
-  const { user } = useAuth()
-  const [showAddForm, setShowAddForm] = useState(false)
-  const [newTitle, setNewTitle] = useState('')
-  const [newAssignee, setNewAssignee] = useState('')
   const [adding, setAdding] = useState(false)
+  const [newTitle, setNewTitle] = useState('')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [saving, setSaving] = useState(false)
 
-  const profileMap = new Map(profiles.map((p) => [p.id, p]))
-
-  const activeTasks = tasks.filter((t) => !t.completed)
-  const completedTasks = tasks.filter((t) => t.completed).slice(0, 5)
-
-  async function handleAdd() {
-    if (!newTitle.trim() || !user) return
-    setAdding(true)
-    try {
-      await createTask({
-        project_id: projectId,
-        title: newTitle.trim(),
-        assigned_to: newAssignee || undefined,
-      })
-      setNewTitle('')
-      setNewAssignee('')
-      setShowAddForm(false)
-      router.refresh()
-    } catch {
-      alert('Failed to add task.')
-    } finally {
-      setAdding(false)
-    }
+  async function handleAdd(e: React.FormEvent) {
+    e.preventDefault()
+    if (!newTitle.trim()) return
+    setSaving(true)
+    await fetch('/api/tasks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: newTitle.trim(), project_id: projectId }),
+    })
+    setNewTitle('')
+    setAdding(false)
+    setSaving(false)
+    router.refresh()
   }
 
-  async function handleComplete(taskId: string) {
-    if (!user) return
-    try {
-      await completeTask(taskId, user.id)
-      router.refresh()
-    } catch {
-      alert('Failed to complete task.')
-    }
+  async function handleEdit(id: string) {
+    if (!editTitle.trim()) return
+    await fetch(`/api/tasks/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: editTitle.trim() }),
+    })
+    setEditingId(null)
+    router.refresh()
   }
 
-  async function handleAssign(taskId: string, assignedTo: string | null) {
-    try {
-      await assignTask(taskId, assignedTo)
-      router.refresh()
-    } catch {
-      alert('Failed to assign task.')
-    }
+  async function handleDelete(id: string) {
+    await fetch(`/api/tasks/${id}`, { method: 'DELETE' })
+    router.refresh()
   }
 
-  async function handleSetNextStep(taskId: string) {
-    try {
-      await setNextStep(projectId, taskId)
-      router.refresh()
-    } catch {
-      alert('Failed to set next step.')
-    }
+  async function handleToggleNextStep(task: Task) {
+    await fetch(`/api/tasks/${task.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_next_step: !task.is_next_step }),
+    })
+    router.refresh()
   }
+
+  const activeTasks = tasks.filter(t => !t.completed)
+  const completedTasks = tasks.filter(t => t.completed)
 
   return (
-    <div className="bg-white rounded-xl border border-black/[0.08] p-4 mb-4">
+    <div className="bg-white rounded-xl p-4">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-[11px] uppercase tracking-[2px] text-[#1E6B5E] font-semibold">
-          Tasks ({activeTasks.length})
-        </h2>
-        <button
-          onClick={() => setShowAddForm(!showAddForm)}
-          className="text-xs font-medium text-[#1E6B5E]"
-        >
-          + Add
-        </button>
+        <h3 className="font-semibold text-gray-700">Tasks ({activeTasks.length})</h3>
+        <button onClick={() => setAdding(true)} className="text-sm text-teal-600 font-medium">+ Add</button>
       </div>
 
-      {showAddForm && (
-        <div className="space-y-2 mb-3">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-              placeholder="Task title..."
-              className="flex-1 text-sm border border-black/10 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#1E6B5E]/30"
-              autoFocus
-            />
-            <button
-              onClick={handleAdd}
-              disabled={adding || !newTitle.trim()}
-              className="text-xs font-medium px-3 py-1.5 rounded-lg bg-[#1E6B5E] text-white disabled:opacity-50"
-            >
-              {adding ? '...' : 'Save'}
-            </button>
-          </div>
-          <select
-            value={newAssignee}
-            onChange={(e) => setNewAssignee(e.target.value)}
-            className="text-xs border border-black/10 rounded-lg px-2 py-1.5 text-[#2C3E50] bg-white focus:outline-none focus:ring-1 focus:ring-[#1E6B5E]/30"
-          >
-            <option value="">Unassigned</option>
-            {profiles.map((p) => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
-        </div>
+      {adding && (
+        <form onSubmit={handleAdd} className="flex gap-2 mb-3">
+          <input
+            autoFocus
+            value={newTitle}
+            onChange={e => setNewTitle(e.target.value)}
+            placeholder="Task title…"
+            className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm"
+          />
+          <button type="button" onClick={() => setAdding(false)} className="px-3 py-2 text-gray-400 text-sm">✕</button>
+          <button type="submit" disabled={saving} className="px-3 py-2 bg-teal-700 text-white rounded-lg text-sm font-medium disabled:opacity-50">Add</button>
+        </form>
       )}
 
-      <div className="space-y-1">
-        {activeTasks.map((task) => (
-          <div
-            key={task.id}
-            className={`flex items-center gap-2 py-1.5 px-2 rounded-lg ${
-              task.is_next_step ? 'bg-[#D4A853]/10' : ''
-            }`}
-          >
-            <button
-              onClick={() => handleComplete(task.id)}
-              className="w-4 h-4 shrink-0 rounded border border-black/20 hover:border-[#1E6B5E] transition-colors"
-              aria-label={`Complete ${task.title}`}
-            />
-            <span className="text-sm text-[#2C3E50] flex-1 min-w-0 truncate">
-              {task.title}
-            </span>
-            {task.is_next_step && (
-              <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#D4A853] text-white shrink-0">
-                NEXT
-              </span>
-            )}
-            {!task.is_next_step && (
+      {activeTasks.length === 0 && !adding && <p className="text-gray-400 text-sm mb-2">No tasks yet.</p>}
+
+      {activeTasks.map(task => (
+        <div key={task.id} className="flex items-center gap-2 py-2 border-b border-gray-50 last:border-0 group">
+          {editingId === task.id ? (
+            <div className="flex gap-2 flex-1">
+              <input
+                autoFocus
+                value={editTitle}
+                onChange={e => setEditTitle(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleEdit(task.id); if (e.key === 'Escape') setEditingId(null) }}
+                className="flex-1 border border-gray-200 rounded-lg px-2 py-1 text-sm"
+              />
+              <button onClick={() => handleEdit(task.id)} className="text-teal-600 text-sm font-medium">Save</button>
+              <button onClick={() => setEditingId(null)} className="text-gray-400 text-sm">✕</button>
+            </div>
+          ) : (
+            <>
               <button
-                onClick={() => handleSetNextStep(task.id)}
-                className="text-[#8899a6] hover:text-[#D4A853] text-xs shrink-0"
-                aria-label={`Set "${task.title}" as next step`}
-                title="Set as next step"
+                onClick={() => handleToggleNextStep(task)}
+                title={task.is_next_step ? 'Unmark as next step' : 'Mark as next step'}
+                className={`w-4 h-4 rounded border shrink-0 flex items-center justify-center text-xs ${task.is_next_step ? 'bg-amber-400 border-amber-400 text-white' : 'border-gray-300'}`}
               >
-                &rarr;
+                {task.is_next_step ? '→' : ''}
               </button>
-            )}
-            <select
-              value={task.assigned_to ?? ''}
-              onChange={(e) => handleAssign(task.id, e.target.value || null)}
-              className="text-[10px] text-[#8899a6] shrink-0 bg-transparent border-none cursor-pointer focus:outline-none"
-              title="Assign task"
-            >
-              <option value="">—</option>
-              {profiles.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-            {task.energy && (
-              <span className="text-xs shrink-0">{ENERGY_ICONS[task.energy]}</span>
-            )}
-          </div>
-        ))}
-      </div>
+              <span className="text-sm text-gray-800 flex-1 truncate">{task.title}</span>
+              {task.is_next_step && <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium shrink-0">NEXT</span>}
+              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                <button onClick={() => { setEditingId(task.id); setEditTitle(task.title) }} className="text-xs text-gray-400 hover:text-teal-600 px-1">✏️</button>
+                <button onClick={() => handleDelete(task.id)} className="text-xs text-gray-400 hover:text-red-500 px-1">🗑</button>
+              </div>
+            </>
+          )}
+        </div>
+      ))}
 
       {completedTasks.length > 0 && (
-        <div className="mt-3 pt-3 border-t border-black/5">
-          <p className="text-[10px] uppercase tracking-wider text-[#8899a6] mb-1">Completed</p>
-          <div className="space-y-1">
-            {completedTasks.map((task) => (
-              <div key={task.id} className="flex items-center gap-2 py-1 px-2">
-                <span className="text-xs shrink-0">{'\u2705'}</span>
-                <span className="text-sm text-[#8899a6] line-through flex-1 min-w-0 truncate">
-                  {task.title}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+        <details className="mt-2">
+          <summary className="text-xs text-gray-400 cursor-pointer select-none">
+            {completedTasks.length} completed
+          </summary>
+          {completedTasks.map(task => (
+            <div key={task.id} className="flex items-center gap-2 py-2 border-b border-gray-50 last:border-0 opacity-50">
+              <div className="w-4 h-4 rounded border border-gray-300 bg-gray-100 shrink-0 flex items-center justify-center text-xs text-gray-400">✓</div>
+              <span className="text-sm text-gray-500 line-through flex-1">{task.title}</span>
+            </div>
+          ))}
+        </details>
       )}
     </div>
   )

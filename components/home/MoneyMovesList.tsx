@@ -39,6 +39,7 @@ function MoveCard({
   onComplete,
   onSkip,
   onView,
+  onDelete,
 }: {
   move: MoneyMove
   expanded: boolean
@@ -47,6 +48,7 @@ function MoveCard({
   onComplete: () => void
   onSkip: () => void
   onView: () => void
+  onDelete: () => void
 }) {
   const { task, project } = move
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
@@ -93,26 +95,34 @@ function MoveCard({
       </div>
 
       {expanded && (
-        <div className="px-4 pb-3 flex gap-2 border-t border-gray-100 pt-2">
-          <button
-            disabled={completing}
-            onClick={onComplete}
-            className="flex-1 bg-teal-700 text-white text-sm rounded-lg py-2 font-medium disabled:opacity-50"
-          >
-            {completing ? 'Saving…' : '✓ Done'}
-          </button>
-          <button
-            onClick={onSkip}
-            className="flex-1 bg-gray-100 text-gray-600 text-sm rounded-lg py-2"
-          >
-            Skip
-          </button>
-          <button
-            onClick={onView}
-            className="flex-1 bg-gray-100 text-gray-600 text-sm rounded-lg py-2"
-          >
-            View →
-          </button>
+        <div className="px-4 pb-3 border-t border-gray-100 pt-2">
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              disabled={completing}
+              onClick={onComplete}
+              className="bg-teal-700 text-white text-sm rounded-lg py-2 font-medium disabled:opacity-50"
+            >
+              {completing ? 'Saving…' : '✓ Done'}
+            </button>
+            <button
+              onClick={onSkip}
+              className="bg-gray-100 text-gray-600 text-sm rounded-lg py-2"
+            >
+              Skip
+            </button>
+            <button
+              onClick={onView}
+              className="bg-gray-100 text-gray-600 text-sm rounded-lg py-2"
+            >
+              View →
+            </button>
+            <button
+              onClick={onDelete}
+              className="bg-red-50 text-red-500 text-sm rounded-lg py-2"
+            >
+              🗑 Delete
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -190,6 +200,10 @@ export default function MoneyMovesList({ moves, onComplete }: Props) {
               }}
               onSkip={() => setExpandedId(null)}
               onView={() => router.push(`/projects/${move.task.project_id}`)}
+              onDelete={async () => {
+                await fetch(`/api/tasks/${move.task.id}`, { method: 'DELETE' })
+                router.refresh()
+              }}
             />
           ))}
         </div>
