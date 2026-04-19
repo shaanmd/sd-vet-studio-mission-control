@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { applyTaskPatch } from '@/lib/mutations/tasks'
 import { NextResponse } from 'next/server'
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -6,9 +7,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const body = await req.json()
-  const { error } = await supabase.from('tasks').update(body).eq('id', id)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  const { error } = await applyTaskPatch(supabase, id, body)
+  if (error) return NextResponse.json({ error }, { status: 500 })
   return NextResponse.json({ ok: true })
 }
 

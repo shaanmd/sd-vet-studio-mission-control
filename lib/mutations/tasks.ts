@@ -1,5 +1,43 @@
 import { createClient } from '@/lib/supabase/client'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Energy } from '@/lib/types/database'
+
+export async function applyTaskPatch(
+  supabase: SupabaseClient,
+  taskId: string,
+  body: Record<string, unknown>
+): Promise<{ error: string | null }> {
+  if (body.is_next_step === true) {
+    const { data: task, error: fetchError } = await supabase
+      .from('tasks')
+      .select('project_id')
+      .eq('id', taskId)
+      .single()
+
+    if (fetchError) return { error: fetchError.message }
+
+    const { error: clearError } = await supabase
+      .from('tasks')
+      .update({ is_next_step: false })
+      .eq('project_id', task.project_id)
+
+    if (clearError) return { error: clearError.message }
+
+    const { error: setError } = await supabase
+      .from('tasks')
+      .update({ is_next_step: true })
+      .eq('id', taskId)
+
+    return { error: setError?.message ?? null }
+  }
+
+  const { error } = await supabase
+    .from('tasks')
+    .update(body)
+    .eq('id', taskId)
+
+  return { error: error?.message ?? null }
+}
 
 export async function createTask(input: {
   project_id: string
