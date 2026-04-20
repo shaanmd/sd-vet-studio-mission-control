@@ -2,13 +2,13 @@
 
 import { useState, useTransition } from 'react'
 import { useAuth } from '@/lib/hooks/use-auth'
-import { completePersonalTask, createPersonalTask } from '@/lib/mutations/personal-tasks'
-import type { PersonalTaskWithProject, Profile } from '@/lib/types/database'
+import type { NextStepTask } from '@/lib/queries/personal-tasks'
+import type { Profile } from '@/lib/types/database'
 import { useRouter } from 'next/navigation'
 
 interface YourNext3Props {
-  debTasks: PersonalTaskWithProject[]
-  shaanTasks: PersonalTaskWithProject[]
+  debTasks: NextStepTask[]
+  shaanTasks: NextStepTask[]
   profiles: Profile[]
 }
 
@@ -17,33 +17,20 @@ export default function YourNext3({ debTasks, shaanTasks, profiles }: YourNext3P
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
 
-  const debProfile = profiles.find((p) => p.name === 'Deb')
-  const shaanProfile = profiles.find((p) => p.name === 'Shaan')
-
   const defaultTab = profile?.name === 'Shaan' ? 'Shaan' : 'Deb'
   const [activeTab, setActiveTab] = useState<'Deb' | 'Shaan'>(defaultTab)
-  const [adding, setAdding] = useState(false)
-  const [newTitle, setNewTitle] = useState('')
 
   const tasks = activeTab === 'Deb' ? debTasks : shaanTasks
   const otherTasks = activeTab === 'Deb' ? shaanTasks : debTasks
   const otherName = activeTab === 'Deb' ? 'Shaan' : 'Deb'
 
-  const activeProfile = activeTab === 'Deb' ? debProfile : shaanProfile
-  const isMyTab = profile?.name === activeTab
-
-  async function handleAdd(e: React.FormEvent) {
-    e.preventDefault()
-    if (!newTitle.trim() || !activeProfile) return
-    await createPersonalTask({ title: newTitle.trim(), owner_id: activeProfile.id })
-    setNewTitle('')
-    setAdding(false)
-    router.refresh()
-  }
-
   function handleComplete(id: string) {
     startTransition(async () => {
-      await completePersonalTask(id)
+      await fetch(`/api/tasks/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ completed: true, completed_at: new Date().toISOString() }),
+      })
       router.refresh()
     })
   }
@@ -62,15 +49,9 @@ export default function YourNext3({ debTasks, shaanTasks, profiles }: YourNext3P
         >
           Your Next 3
         </h2>
-        {isMyTab && tasks.length < 3 && (
-          <button
-            onClick={() => setAdding(true)}
-            className="text-xs font-medium"
-            style={{ color: '#1E6B5E' }}
-          >
-            + Add
-          </button>
-        )}
+        <a href="/projects" className="text-xs" style={{ color: '#1E6B5E' }}>
+          Go to projects →
+        </a>
       </div>
 
       {/* Toggle pills */}
@@ -95,7 +76,7 @@ export default function YourNext3({ debTasks, shaanTasks, profiles }: YourNext3P
         {tasks.length === 0 ? (
           <div className="p-6 text-center">
             <p className="text-sm text-[#8899a6]">
-              No tasks yet. Add your top 3 priorities!
+              No 🔥 tasks yet — open a project and tap 🔥 on a task.
             </p>
           </div>
         ) : (
@@ -127,35 +108,6 @@ export default function YourNext3({ debTasks, shaanTasks, profiles }: YourNext3P
           ))
         )}
       </div>
-
-      {/* Inline add form */}
-      {adding && (
-        <form onSubmit={handleAdd} className="mt-2 flex gap-2">
-          <input
-            autoFocus
-            value={newTitle}
-            onChange={(e) => setNewTitle(e.target.value)}
-            placeholder="What's your next priority?"
-            className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm"
-            onKeyDown={(e) => { if (e.key === 'Escape') { setAdding(false); setNewTitle('') } }}
-          />
-          <button
-            type="submit"
-            disabled={!newTitle.trim()}
-            className="px-3 py-2 rounded-lg text-sm font-medium text-white disabled:opacity-40"
-            style={{ backgroundColor: '#1E6B5E' }}
-          >
-            Add
-          </button>
-          <button
-            type="button"
-            onClick={() => { setAdding(false); setNewTitle('') }}
-            className="px-2 text-gray-400 text-sm"
-          >
-            ✕
-          </button>
-        </form>
-      )}
     </section>
   )
 }

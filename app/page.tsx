@@ -1,7 +1,7 @@
 // app/page.tsx
 import { createClient } from '@/lib/supabase/server'
 import { getPinnedProjects } from '@/lib/queries/projects'
-import { getPersonalTasks } from '@/lib/queries/personal-tasks'
+import { getNextStepTasks } from '@/lib/queries/personal-tasks'
 import YourNext3 from '@/components/home/YourNext3'
 import FocusProjects from '@/components/home/FocusProjects'
 import type { Profile } from '@/lib/types/database'
@@ -20,10 +20,10 @@ export default async function HomePage() {
   const debProfile = allProfiles.find((p) => p.name === 'Deb')
   const shaanProfile = allProfiles.find((p) => p.name === 'Shaan')
 
-  // Fetch personal tasks and pinned projects in parallel
+  // Fetch next-step project tasks and pinned projects in parallel
   const [debTasks, shaanTasks, pinnedProjects] = await Promise.all([
-    debProfile ? getPersonalTasks(debProfile.id) : Promise.resolve([]),
-    shaanProfile ? getPersonalTasks(shaanProfile.id) : Promise.resolve([]),
+    debProfile ? getNextStepTasks(debProfile.id) : Promise.resolve([]),
+    shaanProfile ? getNextStepTasks(shaanProfile.id) : Promise.resolve([]),
     getPinnedProjects(),
   ])
 
