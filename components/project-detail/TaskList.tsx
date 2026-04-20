@@ -24,6 +24,7 @@ export default function TaskList({ projectId, tasks }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editTitle, setEditTitle] = useState('')
   const [saving, setSaving] = useState(false)
+  const [completingId, setCompletingId] = useState<string | null>(null)
 
   const activeTasks = tasks
     .filter((t) => !t.completed)
@@ -55,6 +56,7 @@ export default function TaskList({ projectId, tasks }: Props) {
   }
 
   async function handleComplete(id: string) {
+    setCompletingId(id)
     await fetch(`/api/tasks/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -62,6 +64,16 @@ export default function TaskList({ projectId, tasks }: Props) {
         completed: true,
         completed_at: new Date().toISOString(),
       }),
+    })
+    router.refresh()
+    setCompletingId(null)
+  }
+
+  async function handleUncomplete(id: string) {
+    await fetch(`/api/tasks/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ completed: false, completed_at: null }),
     })
     router.refresh()
   }
@@ -185,12 +197,18 @@ export default function TaskList({ projectId, tasks }: Props) {
 
               <button
                 onClick={() => handleComplete(task.id)}
-                className="shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors hover:border-teal-600 hover:bg-teal-50"
-                style={{ borderColor: '#CBD5E1' }}
+                className="shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors"
+                style={
+                  completingId === task.id
+                    ? { backgroundColor: '#1E6B5E', borderColor: '#1E6B5E' }
+                    : { borderColor: '#CBD5E1' }
+                }
                 title="Mark complete"
                 aria-label={`Complete "${task.title}"`}
               >
-                <span className="sr-only">Complete</span>
+                {completingId === task.id && (
+                  <span className="text-[10px] text-white leading-none">✓</span>
+                )}
               </button>
             </>
           )}
@@ -253,9 +271,16 @@ export default function TaskList({ projectId, tasks }: Props) {
           </summary>
           <div className="mt-2 space-y-0">
             {completedTasks.map((task) => (
-              <div key={task.id} className="flex items-center gap-2 py-1.5 opacity-40">
+              <div key={task.id} className="flex items-center gap-2 py-1.5">
                 <span className="w-7 shrink-0" />
-                <span className="text-sm text-gray-500 line-through flex-1">{task.title}</span>
+                <span className="text-sm text-gray-400 line-through flex-1">{task.title}</span>
+                <button
+                  onClick={() => handleUncomplete(task.id)}
+                  className="text-xs text-gray-300 hover:text-gray-500 shrink-0 px-1"
+                  title="Restore task"
+                >
+                  ↩
+                </button>
                 <div
                   className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
                   style={{ backgroundColor: '#1E6B5E20' }}
