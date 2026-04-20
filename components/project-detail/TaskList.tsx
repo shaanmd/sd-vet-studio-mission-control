@@ -67,7 +67,10 @@ export default function TaskList({ projectId, tasks }: Props) {
   }
 
   async function handleEdit(id: string) {
-    if (!editTitle.trim()) return
+    if (!editTitle.trim()) {
+      setEditingId(null)
+      return
+    }
     await fetch(`/api/tasks/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
