@@ -8,6 +8,7 @@ import NextStepCard from '@/components/project-detail/NextStepCard'
 import AIAnalysisPanel from '@/components/project-detail/AIAnalysisPanel'
 import ProjectEditButton from '@/components/project-detail/ProjectEditButton'
 import TaskList from '@/components/project-detail/TaskList'
+import KeyLinks from '@/components/project-detail/KeyLinks'
 import NotesList from '@/components/project-detail/NotesList'
 
 export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -94,6 +95,9 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         analysis={analysis}
         onSave={handleSaveAnalysis}
       />
+
+      {/* Key Links */}
+      <KeyLinks projectId={id} links={links} />
 
       {/* Tasks */}
       <TaskList projectId={id} tasks={tasks} />
