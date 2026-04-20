@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useAuth } from '@/lib/hooks/use-auth'
-import { completePersonalTask } from '@/lib/mutations/personal-tasks'
+import { completePersonalTask, createPersonalTask } from '@/lib/mutations/personal-tasks'
 import type { PersonalTaskWithProject, Profile } from '@/lib/types/database'
 import { useRouter } from 'next/navigation'
 
@@ -22,10 +22,24 @@ export default function YourNext3({ debTasks, shaanTasks, profiles }: YourNext3P
 
   const defaultTab = profile?.name === 'Shaan' ? 'Shaan' : 'Deb'
   const [activeTab, setActiveTab] = useState<'Deb' | 'Shaan'>(defaultTab)
+  const [adding, setAdding] = useState(false)
+  const [newTitle, setNewTitle] = useState('')
 
   const tasks = activeTab === 'Deb' ? debTasks : shaanTasks
   const otherTasks = activeTab === 'Deb' ? shaanTasks : debTasks
   const otherName = activeTab === 'Deb' ? 'Shaan' : 'Deb'
+
+  const activeProfile = activeTab === 'Deb' ? debProfile : shaanProfile
+  const isMyTab = profile?.name === activeTab
+
+  async function handleAdd(e: React.FormEvent) {
+    e.preventDefault()
+    if (!newTitle.trim() || !activeProfile) return
+    await createPersonalTask({ title: newTitle.trim(), owner_id: activeProfile.id })
+    setNewTitle('')
+    setAdding(false)
+    router.refresh()
+  }
 
   function handleComplete(id: string) {
     startTransition(async () => {
@@ -41,12 +55,23 @@ export default function YourNext3({ debTasks, shaanTasks, profiles }: YourNext3P
 
   return (
     <section>
-      <h2
-        className="text-[11px] uppercase tracking-[2px] font-semibold mb-3"
-        style={{ color: '#D4A853' }}
-      >
-        Your Next 3
-      </h2>
+      <div className="flex items-center justify-between mb-3">
+        <h2
+          className="text-[11px] uppercase tracking-[2px] font-semibold"
+          style={{ color: '#D4A853' }}
+        >
+          Your Next 3
+        </h2>
+        {isMyTab && tasks.length < 3 && (
+          <button
+            onClick={() => setAdding(true)}
+            className="text-xs font-medium"
+            style={{ color: '#1E6B5E' }}
+          >
+            + Add
+          </button>
+        )}
+      </div>
 
       {/* Toggle pills */}
       <div className="flex gap-1 mb-3">
@@ -102,6 +127,35 @@ export default function YourNext3({ debTasks, shaanTasks, profiles }: YourNext3P
           ))
         )}
       </div>
+
+      {/* Inline add form */}
+      {adding && (
+        <form onSubmit={handleAdd} className="mt-2 flex gap-2">
+          <input
+            autoFocus
+            value={newTitle}
+            onChange={(e) => setNewTitle(e.target.value)}
+            placeholder="What's your next priority?"
+            className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm"
+            onKeyDown={(e) => { if (e.key === 'Escape') { setAdding(false); setNewTitle('') } }}
+          />
+          <button
+            type="submit"
+            disabled={!newTitle.trim()}
+            className="px-3 py-2 rounded-lg text-sm font-medium text-white disabled:opacity-40"
+            style={{ backgroundColor: '#1E6B5E' }}
+          >
+            Add
+          </button>
+          <button
+            type="button"
+            onClick={() => { setAdding(false); setNewTitle('') }}
+            className="px-2 text-gray-400 text-sm"
+          >
+            ✕
+          </button>
+        </form>
+      )}
     </section>
   )
 }
