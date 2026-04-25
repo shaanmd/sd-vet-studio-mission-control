@@ -2,14 +2,13 @@
 import Link from 'next/link'
 import type { Project, Task } from '@/lib/types/database'
 
-const REVENUE_EMOJI: Record<string, string> = { high: '💰💰💰', medium: '💰💰', low: '💰' }
-const STAGE_COLORS: Record<string, string> = {
-  inbox: 'bg-gray-100 text-gray-600',
-  someday: 'bg-purple-100 text-purple-600',
-  exploring: 'bg-blue-100 text-blue-700',
-  building: 'bg-orange-100 text-orange-700',
-  live: 'bg-green-100 text-green-700',
-  maintenance: 'bg-teal-100 text-teal-700',
+const STAGE_PILLS: Record<string, { bg: string; color: string }> = {
+  inbox:       { bg: '#EEE8F6', color: '#6B4E94' },
+  someday:     { bg: '#E5EEF7', color: '#3A6C98' },
+  exploring:   { bg: '#E5EEF7', color: '#3A6C98' },
+  building:    { bg: '#F5E7C8', color: '#8A5A1E' },
+  live:        { bg: '#D4F0EE', color: '#1E6B5E' },
+  maintenance: { bg: '#EFEAE0', color: '#6B7A82' },
 }
 
 interface Props {
@@ -18,27 +17,51 @@ interface Props {
 }
 
 export default function ProjectCard({ project, nextStep }: Props) {
+  const pill = STAGE_PILLS[project.stage] ?? STAGE_PILLS.inbox
+
   return (
-    <Link href={`/projects/${project.id}`} className="block bg-white rounded-xl shadow-sm p-4 hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between gap-2 mb-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="text-lg">{project.emoji}</span>
-          <span className="font-semibold text-gray-800 truncate">{project.name}</span>
+    <Link
+      href={`/projects/${project.id}`}
+      className="block rounded-xl p-3.5 transition-shadow hover:shadow-sm"
+      style={{
+        background: '#fff',
+        border: nextStep ? '1px solid #EFDDB0' : '1px solid #E8E2D6',
+      }}
+    >
+      {/* Header */}
+      <div className="flex items-center gap-2.5 mb-2.5">
+        <span className="text-xl leading-none">{project.emoji}</span>
+        <div className="flex-1 min-w-0">
+          <div className="text-[14px] font-bold truncate" style={{ color: '#0D2035' }}>
+            {project.name}
+          </div>
         </div>
-        <div className="flex items-center gap-1.5 shrink-0">
-          <span className="text-sm">{REVENUE_EMOJI[project.revenue_score ?? 'low']}</span>
-          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STAGE_COLORS[project.stage] ?? 'bg-gray-100 text-gray-600'}`}>
-            {project.stage}
+        <span
+          className="px-2 py-0.5 rounded-full text-[11px] font-semibold shrink-0"
+          style={{ background: pill.bg, color: pill.color }}
+        >
+          {project.stage}
+        </span>
+      </div>
+
+      {/* Next step */}
+      {nextStep ? (
+        <div
+          className="flex items-center gap-2 rounded-lg px-2.5 py-2"
+          style={{ background: '#FBF3DE', border: '1px solid #EFDDB0' }}
+        >
+          <span className="font-bold" style={{ color: '#D4A853' }}>→</span>
+          <span className="flex-1 text-[12.5px] font-semibold truncate" style={{ color: '#0D2035' }}>
+            {nextStep.title}
           </span>
         </div>
-      </div>
-      {nextStep && (
-        <div className="text-xs text-teal-700 font-medium truncate">
-          → {nextStep.title}
+      ) : (
+        <div
+          className="rounded-lg px-2.5 py-2 text-[12px] italic"
+          style={{ border: '1.5px dashed #CDC3AE', color: '#9AA5AC' }}
+        >
+          No next step set · add one
         </div>
-      )}
-      {!nextStep && (
-        <div className="text-xs text-gray-400">No next step set</div>
       )}
     </Link>
   )

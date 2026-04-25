@@ -1,99 +1,91 @@
 import Link from 'next/link'
-import { formatDistanceToNow } from '@/lib/utils/dates'
-import type { ProjectWithDetails, Stage } from '@/lib/types/database'
+import type { ProjectWithDetails } from '@/lib/types/database'
 
 interface FocusProjectsProps {
   projects: ProjectWithDetails[]
 }
 
-const stageColors: Record<string, string> = {
-  building: '#1E6B5E',
-  live: '#059669',
-  exploring: '#b45309',
-}
-const defaultStageColor = '#8899a6'
-
-function stageBadgeColor(stage: Stage): string {
-  return stageColors[stage] ?? defaultStageColor
+const STAGE_PILLS: Record<string, { bg: string; color: string }> = {
+  inbox:       { bg: '#EEE8F6', color: '#6B4E94' },
+  someday:     { bg: '#E5EEF7', color: '#3A6C98' },
+  exploring:   { bg: '#E5EEF7', color: '#3A6C98' },
+  building:    { bg: '#F5E7C8', color: '#8A5A1E' },
+  live:        { bg: '#D4F0EE', color: '#1E6B5E' },
+  maintenance: { bg: '#EFEAE0', color: '#6B7A82' },
 }
 
 export default function FocusProjects({ projects }: FocusProjectsProps) {
   return (
-    <section>
-      <h2
-        className="text-[11px] uppercase tracking-[2px] font-semibold mb-3"
-        style={{ color: '#D4A853' }}
+    <div className="flex flex-col gap-3">
+      <div
+        className="text-[10.5px] font-bold uppercase tracking-[1.6px]"
+        style={{ color: '#6B7A82' }}
       >
-        Focus Projects
-      </h2>
+        Focus projects · {projects.length} pinned
+      </div>
 
       {projects.length === 0 ? (
-        <div className="bg-white rounded-xl border border-black/8 p-6 text-center">
-          <p className="text-sm text-[#8899a6]">
-            No pinned projects yet. Pin up to 3 from your project list.
-          </p>
+        <div
+          className="rounded-xl p-6 text-center text-[13px]"
+          style={{ background: '#fff', border: '1px solid #E8E2D6', color: '#9AA5AC' }}
+        >
+          No pinned projects yet. Pin up to 3 from your project list.
         </div>
       ) : (
-        <div className="space-y-3">
-          {projects.map((project) => {
-            const cache = project.github_cache
-            const color = stageBadgeColor(project.stage)
+        projects.map((project) => {
+          const pill = STAGE_PILLS[project.stage] ?? STAGE_PILLS.inbox
+          const hasNext = !!project.next_step
 
-            return (
-              <Link
-                key={project.id}
-                href={`/projects/${project.id}`}
-                className="block bg-white rounded-xl border border-black/8 p-4 hover:shadow-sm transition-shadow"
-              >
-                {/* Header: emoji + name + stage badge */}
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-sm font-semibold text-[#2C3E50]">
-                    {project.emoji && `${project.emoji} `}
-                    {project.name}
-                  </span>
-                  <span
-                    className="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full"
-                    style={{
-                      color,
-                      backgroundColor: `${color}15`,
-                    }}
-                  >
-                    {project.stage}
+          return (
+            <Link
+              key={project.id}
+              href={`/projects/${project.id}`}
+              className="block rounded-xl p-3.5 transition-shadow hover:shadow-sm"
+              style={{
+                background: '#fff',
+                border: hasNext ? '1px solid #EFDDB0' : '1px solid #E8E2D6',
+              }}
+            >
+              {/* Header row */}
+              <div className="flex items-center gap-2.5 mb-2.5">
+                <span className="text-xl leading-none">{project.emoji}</span>
+                <div className="flex-1 text-[14px] font-bold truncate" style={{ color: '#0D2035' }}>
+                  {project.name}
+                </div>
+                <span
+                  className="px-2 py-0.5 rounded-full text-[11px] font-semibold shrink-0"
+                  style={{ background: pill.bg, color: pill.color }}
+                >
+                  {project.stage}
+                </span>
+              </div>
+
+              {/* Next step card */}
+              {hasNext ? (
+                <div
+                  className="flex items-center gap-2 rounded-lg px-2.5 py-2"
+                  style={{ background: '#FBF3DE', border: '1px solid #EFDDB0' }}
+                >
+                  <span className="font-bold" style={{ color: '#D4A853' }}>→</span>
+                  <span className="flex-1 text-[12.5px] font-semibold truncate" style={{ color: '#0D2035' }}>
+                    {project.next_step!.title}
                   </span>
                 </div>
-
-                {/* Auto-status from github_cache */}
-                {cache && (
-                  <p className="text-xs text-[#8899a6] mb-1.5">
-                    {cache.last_commit_at && (
-                      <span>Last commit {formatDistanceToNow(cache.last_commit_at)}</span>
-                    )}
-                    {cache.deploy_status && (
-                      <span>
-                        {cache.last_commit_at ? ' · ' : ''}
-                        Deploy: {cache.deploy_status}
-                      </span>
-                    )}
-                  </p>
-                )}
-
-                {/* Next step */}
-                {project.next_step && (
-                  <p className="text-xs text-[#b45309]">
-                    <span style={{ color: '#D4A853' }}>Next: </span>
-                    {project.next_step.title}
-                  </p>
-                )}
-
-                {/* Hint */}
-                <p className="text-[10px] text-[#8899a6] mt-2">
-                  Tap for full details &rarr;
-                </p>
-              </Link>
-            )
-          })}
-        </div>
+              ) : (
+                <div
+                  className="rounded-lg px-2.5 py-2 text-[12px] italic"
+                  style={{
+                    border: '1.5px dashed #CDC3AE',
+                    color: '#9AA5AC',
+                  }}
+                >
+                  No next step set · add one
+                </div>
+              )}
+            </Link>
+          )
+        })
       )}
-    </section>
+    </div>
   )
 }

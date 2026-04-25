@@ -1,9 +1,14 @@
 // app/page.tsx
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { getPinnedProjects } from '@/lib/queries/projects'
 import { getNextStepTasks } from '@/lib/queries/personal-tasks'
+import { getRevenueEntries } from '@/lib/queries/revenue'
+import TopBar from '@/components/TopBar'
 import YourNext3 from '@/components/home/YourNext3'
 import FocusProjects from '@/components/home/FocusProjects'
+import RevenueTiles from '@/components/home/RevenueTiles'
+import { Greeting } from '@/components/home/Greeting'
 import type { Profile } from '@/lib/types/database'
 
 export default async function HomePage() {
@@ -11,7 +16,6 @@ export default async function HomePage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
-  // Fetch all profiles to find Deb and Shaan's IDs
   const { data: profiles } = await supabase
     .from('profiles')
     .select('id, name, role, avatar_url, slack_user_id, created_at')
@@ -19,60 +23,66 @@ export default async function HomePage() {
   const allProfiles = (profiles ?? []) as Profile[]
   const debProfile = allProfiles.find((p) => p.name === 'Deb')
   const shaanProfile = allProfiles.find((p) => p.name === 'Shaan')
+  // Map email → display name (handles profiles where name was set to email)
+  const shaanEmail = process.env.NEXT_PUBLIC_SHAAN_EMAIL ?? ''
+  const debEmail   = process.env.NEXT_PUBLIC_DEB_EMAIL ?? ''
+  const currentName =
+    user.email === shaanEmail ? 'Shaan' :
+    user.email === debEmail   ? 'Deb'   :
+    debProfile?.id === user.id ? 'Deb' :
+    shaanProfile?.id === user.id ? 'Shaan' :
+    'there'
 
-  // Fetch next-step project tasks and pinned projects in parallel
-  const [debTasks, shaanTasks, pinnedProjects] = await Promise.all([
+  const [debTasks, shaanTasks, pinnedProjects, revenueEntries] = await Promise.all([
     debProfile ? getNextStepTasks(debProfile.id) : Promise.resolve([]),
     shaanProfile ? getNextStepTasks(shaanProfile.id) : Promise.resolve([]),
     getPinnedProjects(),
+    getRevenueEntries(),
   ])
 
   return (
-    <div className="max-w-lg mx-auto px-4 pt-6 pb-24 space-y-6">
-      <div>
-        <h1 className="text-xl font-bold" style={{ color: '#1E6B5E' }}>SD VetStudio</h1>
-        <p className="text-sm text-gray-400">
-          {new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}
-        </p>
-      </div>
-
-      <YourNext3
-        debTasks={debTasks}
-        shaanTasks={shaanTasks}
-        profiles={allProfiles}
+    <>
+      <TopBar
+        crumbs={['Home']}
+        right={
+          <div className="flex items-center gap-2">
+            <Link
+              href="/finance"
+              className="px-3 py-1.5 rounded-lg text-[13px] font-semibold transition-colors hover:bg-white/80"
+              style={{ border: '1px solid #D9D2C2', background: '#fff', color: '#2A3A48' }}
+            >
+              + Log revenue
+            </Link>
+            <Link
+              href="/finance"
+              className="px-3 py-1.5 rounded-lg text-[13px] font-semibold text-white transition-opacity hover:opacity-90"
+              style={{ background: '#1E6B5E' }}
+            >
+              + Log expense
+            </Link>
+          </div>
+        }
       />
 
-      <FocusProjects projects={pinnedProjects} />
+      <div className="flex-1 overflow-auto pb-24 md:pb-7" style={{ padding: '24px 28px' }}>
+        {/* Greeting strip */}
+        <div className="flex items-end justify-between mb-5">
+          <Greeting name={currentName} />
+        </div>
 
-      <div>
-        <h2
-          className="text-[11px] uppercase tracking-[2px] font-semibold mb-3"
-          style={{ color: '#D4A853' }}
-        >
-          Quick Actions
-        </h2>
-        <div className="grid grid-cols-3 gap-2">
-          <a
-            href="/projects"
-            className="bg-white rounded-xl p-3 text-center text-sm font-medium border border-black/8"
-            style={{ color: '#1E6B5E' }}
-          >
-            + Add Idea
-          </a>
-          <a
-            href="/projects"
-            className="bg-white rounded-xl p-3 text-center text-sm font-medium text-gray-600 border border-black/8"
-          >
-            All Projects
-          </a>
-          <a
-            href="/resources"
-            className="bg-white rounded-xl p-3 text-center text-sm font-medium text-gray-600 border border-black/8"
-          >
-            Resources
-          </a>
+        {/* Revenue tiles */}
+        <RevenueTiles entries={revenueEntries} />
+
+        {/* 2-col: money moves + focus projects */}
+        <div className="grid gap-4" style={{ gridTemplateColumns: '1.3fr 1fr' }}>
+          <YourNext3
+            debTasks={debTasks}
+            shaanTasks={shaanTasks}
+            profiles={allProfiles}
+          />
+          <FocusProjects projects={pinnedProjects} />
         </div>
       </div>
-    </div>
+    </>
   )
 }

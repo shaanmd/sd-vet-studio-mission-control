@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "Project Planner": {
+      "source": "jmsktm/claude-settings",
+      "sourceType": "github",
+      "computedHash": "4407fff980ad2e43c288badc24231b08f60084b1d8a86349bd7fba0255d6dfd8"
+    }
+  }
+}

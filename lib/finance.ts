@@ -41,6 +41,22 @@ export function getRevenueByStream(entries: RevenueEntry[]): Partial<Record<stri
   }, {} as Record<string, number>)
 }
 
+/** Returns entries where date falls within the current calendar week (Mon–Sun) */
+export function filterCurrentWeek<T extends { revenue_date?: string; expense_date?: string }>(
+  entries: T[],
+  dateKey: 'revenue_date' | 'expense_date'
+): T[] {
+  const now = new Date()
+  const dayOfWeek = now.getDay()
+  const startOfWeek = new Date(now)
+  startOfWeek.setDate(now.getDate() - ((dayOfWeek + 6) % 7)) // Monday
+  startOfWeek.setHours(0, 0, 0, 0)
+  return entries.filter((e) => {
+    const d = new Date(e[dateKey] as string)
+    return d >= startOfWeek && d <= now
+  })
+}
+
 /** Returns entries where date falls within the current calendar month */
 export function filterCurrentMonth<T extends { revenue_date?: string; expense_date?: string }>(
   entries: T[],
