@@ -41,6 +41,8 @@ export type ActivityAction =
   | 'project_pinned'
   | 'revenue_logged'
 
+export type ProjectType = 'website_build' | 'saas' | 'course' | 'consulting' | 'content' | 'tool'
+
 export type RevenueScore = 'low' | 'medium' | 'high'
 
 export type RevenueStream =
@@ -104,6 +106,12 @@ export interface Project {
   tech_stack: string | null
   target_audience: string | null
   domains: ProjectDomain[]
+  project_type: ProjectType | null
+  client_name: string | null
+  client_email: string | null
+  delivery_date: string | null
+  ga4_property_id: string | null
+  monthly_visitors: number | null
   created_by: string | null
   updated_by: string | null
   created_at: string
