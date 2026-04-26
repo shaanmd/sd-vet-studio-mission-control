@@ -113,17 +113,27 @@ export default function TaskList({ projectId, tasks: initialTasks, allProjects =
     if (!newTitle.trim()) return
     setSaving(true)
 
+    // Capture ALL values NOW before any state resets
+    const payload = {
+      title: newTitle.trim(),
+      project_id: projectId,
+      energy: newEnergy,
+      due_date: newDueDate || null,
+      recurrence: newRecurrence || null,
+      assigned_to: newAssignee || null,
+    }
+
     // Optimistic: show task immediately
     const optimisticTask: Task = {
       id: `optimistic-${Date.now()}`,
-      title: newTitle.trim(),
+      title: payload.title,
       project_id: projectId,
       description: null,
-      energy: newEnergy as Task['energy'],
-      due_date: newDueDate || null,
-      recurrence: (newRecurrence || null) as Task['recurrence'],
+      energy: payload.energy as Task['energy'],
+      due_date: payload.due_date,
+      recurrence: payload.recurrence as Task['recurrence'],
       recurrence_next_due: null,
-      assigned_to: newAssignee || null,
+      assigned_to: payload.assigned_to,
       is_next_step: false,
       completed: false,
       completed_at: null,
@@ -139,22 +149,17 @@ export default function TaskList({ projectId, tasks: initialTasks, allProjects =
     const res = await fetch('/api/tasks', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title: optimisticTask.title,
-        project_id: projectId,
-        energy: newEnergy,
-        due_date: newDueDate || null,
-        recurrence: newRecurrence || null,
-        assigned_to: newAssignee || null,
-      }),
+      body: JSON.stringify(payload),
     })
 
     if (res.ok) {
       const created = await res.json()
-      // Replace optimistic task with real one
       setLocalTasks(prev => prev.map(t => t.id === optimisticTask.id ? created : t))
       router.refresh()
     } else {
+      const err = await res.json().catch(() => ({ error: 'Unknown error' }))
+      console.error('Task save failed:', err)
+      alert(`Could not save task: ${err.error ?? 'Unknown error'}`)
       // Rollback
       setLocalTasks(prev => prev.filter(t => t.id !== optimisticTask.id))
     }
