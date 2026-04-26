@@ -39,7 +39,9 @@
       "Bash(npx skills *)",
       "WebFetch(domain:api.anthropic.com)",
       "Read(//tmp/design_bundle/sdvetstudiomissioncontrol/project/**)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "mcp__1f647280-55d7-477d-a560-b0478b15df67__list_tables",
+      "mcp__1f647280-55d7-477d-a560-b0478b15df67__apply_migration"
     ]
   }
 }

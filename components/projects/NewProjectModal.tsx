@@ -49,8 +49,8 @@ export default function NewProjectModal({ onClose, onSubmit }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/40 px-4 py-8">
-      <div className="bg-white rounded-2xl w-full max-w-md p-6 mx-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
+      <div className="bg-white rounded-2xl w-full max-w-md p-6 max-h-[92vh] overflow-y-auto">
         <h2 className="text-lg font-bold text-gray-800 mb-4">New Project</h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>

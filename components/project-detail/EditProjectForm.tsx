@@ -42,8 +42,8 @@ export default function EditProjectForm({ project, onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/40 px-4">
-      <div className="bg-white rounded-2xl w-full max-w-md p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
+      <div className="bg-white rounded-2xl w-full max-w-md p-6 max-h-[92vh] overflow-y-auto">
         <h2 className="text-lg font-bold text-gray-800 mb-4">Edit Project</h2>
         <form onSubmit={handleSave} className="flex flex-col gap-3">
           <div className="flex gap-2">

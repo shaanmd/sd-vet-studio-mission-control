@@ -39,12 +39,12 @@ export default function StageTriage({ projectId, projectName, onClose, onSuccess
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
       {/* Sheet */}
-      <div className="relative bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-sm p-6 pb-8 sm:pb-6">
+      <div className="relative bg-white rounded-2xl w-full max-w-sm p-6 max-h-[92vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-sm font-semibold text-[#2C3E50]">
             Sort: {projectName}

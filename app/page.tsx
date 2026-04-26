@@ -4,10 +4,12 @@ import { createClient } from '@/lib/supabase/server'
 import { getPinnedProjects } from '@/lib/queries/projects'
 import { getNextStepTasks } from '@/lib/queries/personal-tasks'
 import { getRevenueEntries } from '@/lib/queries/revenue'
+import { getRevenueTotal, filterCurrentMonth } from '@/lib/finance'
 import TopBar from '@/components/TopBar'
 import YourNext3 from '@/components/home/YourNext3'
 import FocusProjects from '@/components/home/FocusProjects'
 import RevenueTiles from '@/components/home/RevenueTiles'
+import FinancialGoal from '@/components/home/FinancialGoal'
 import { Greeting } from '@/components/home/Greeting'
 import type { Profile } from '@/lib/types/database'
 
@@ -33,12 +35,18 @@ export default async function HomePage() {
     shaanProfile?.id === user.id ? 'Shaan' :
     'there'
 
-  const [debTasks, shaanTasks, pinnedProjects, revenueEntries] = await Promise.all([
+  const [debTasks, shaanTasks, pinnedProjects, revenueEntries, settingsRow] = await Promise.all([
     debProfile ? getNextStepTasks(debProfile.id) : Promise.resolve([]),
     shaanProfile ? getNextStepTasks(shaanProfile.id) : Promise.resolve([]),
     getPinnedProjects(),
     getRevenueEntries(),
+    supabase.from('settings').select('value').eq('key', 'financial_goal').single(),
   ])
+
+  const financialGoal = (settingsRow.data?.value as any) ?? null
+  const ytdRevenue = getRevenueTotal(
+    revenueEntries.filter(e => new Date((e as any).revenue_date ?? (e as any).created_at).getFullYear() === new Date().getFullYear())
+  )
 
   return (
     <>
@@ -69,6 +77,9 @@ export default async function HomePage() {
         <div className="flex items-end justify-between mb-5">
           <Greeting name={currentName} />
         </div>
+
+        {/* Financial goal */}
+        <FinancialGoal initialGoal={financialGoal} currentRevenue={ytdRevenue} />
 
         {/* Revenue tiles */}
         <RevenueTiles entries={revenueEntries} />

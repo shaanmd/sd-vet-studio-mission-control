@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import AddLeadForm from './AddLeadForm'
+import EditLeadModal from './EditLeadModal'
 
 const INTEREST_STYLE: Record<string, { bg: string; color: string }> = {
   hot:     { bg: '#FDECEA', color: '#C0392B' },
@@ -31,6 +32,7 @@ export default function LeadsClient({ leads, projects }: Props) {
   const router = useRouter()
   const [filter, setFilter] = useState<'all' | 'hot' | 'warm' | 'curious'>('all')
   const [showAdd, setShowAdd] = useState(false)
+  const [editingLead, setEditingLead] = useState<Lead | null>(null)
 
   const filtered = filter === 'all' ? leads : leads.filter(l => l.interest_level === filter)
 
@@ -80,7 +82,7 @@ export default function LeadsClient({ leads, projects }: Props) {
           return (
             <div
               key={lead.id}
-              className="rounded-xl px-4 py-3.5 flex items-start gap-3"
+              className="group rounded-xl px-4 py-3.5 flex items-start gap-3"
               style={{ background: '#fff', border: '1px solid #E8E2D6' }}
             >
               <div
@@ -92,6 +94,13 @@ export default function LeadsClient({ leads, projects }: Props) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-[14px] font-semibold" style={{ color: '#1E2A35' }}>{lead.name}</span>
+                  <button
+                    onClick={() => setEditingLead(lead)}
+                    className="text-[11px] font-semibold px-2 py-0.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{ background: '#F5F0E8', color: '#6B7A82' }}
+                  >
+                    Edit
+                  </button>
                   <span
                     className="text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize"
                     style={{ background: style.bg, color: style.color }}
@@ -122,6 +131,13 @@ export default function LeadsClient({ leads, projects }: Props) {
         <AddLeadForm
           projects={projects}
           onClose={() => { setShowAdd(false); router.refresh() }}
+        />
+      )}
+      {editingLead && (
+        <EditLeadModal
+          lead={editingLead as any}
+          projects={projects}
+          onClose={() => { setEditingLead(null); router.refresh() }}
         />
       )}
     </>
