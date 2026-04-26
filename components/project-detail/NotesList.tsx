@@ -3,6 +3,22 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { ProjectNote } from '@/lib/types/database'
 
+function formatNoteTime(iso: string): string {
+  const date = new Date(iso)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffMins = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMs / 3600000)
+  const diffDays = Math.floor(diffMs / 86400000)
+
+  if (diffMins < 1)   return 'just now'
+  if (diffMins < 60)  return `${diffMins}m ago`
+  if (diffHours < 24) return `${diffHours}h ago`
+  if (diffDays === 1) return `yesterday at ${date.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: true })}`
+  if (diffDays < 7)   return `${diffDays} days ago`
+  return date.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: diffDays > 365 ? 'numeric' : undefined })
+}
+
 interface NoteWithAuthor extends ProjectNote {
   author?: { name: string } | null
 }
@@ -142,7 +158,7 @@ export default function NotesList({ projectId, notes }: Props) {
                 {note.content}
               </p>
               <p className="text-[11px] mt-1.5 px-0" style={{ color: '#9AA5AC' }}>
-                {note.author?.name ?? 'Auto'} · {new Date(note.created_at).toLocaleDateString('en-AU')}
+                {note.author?.name ?? 'Auto'} · {formatNoteTime(note.created_at)}
               </p>
             </>
           )}
