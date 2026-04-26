@@ -17,8 +17,9 @@ import PulseStrip from '@/components/project-detail/PulseStrip'
 import AccordionSection from '@/components/project-detail/AccordionSection'
 import LaunchGates from '@/components/project-detail/LaunchGates'
 import TypeAccordion from '@/components/project-detail/TypeAccordion'
+import ProjectContacts from '@/components/project-detail/ProjectContacts'
 import type { Meeting } from '@/components/meetings/MeetingsClient'
-import type { LaunchGate, PulseTileValue } from '@/lib/types/database'
+import type { LaunchGate, PulseTileValue, Contact } from '@/lib/types/database'
 
 
 export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -27,7 +28,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
-  const [project, tasks, notes, links, analysis, projectExpenses, projectRevenue, allProjects, meetingsData] = await Promise.all([
+  const [project, tasks, notes, links, analysis, projectExpenses, projectRevenue, allProjects, meetingsData, projectContactsData] = await Promise.all([
     getProject(id).catch(() => null),
     getProjectTasks(id),
     getProjectNotes(id),
@@ -37,7 +38,11 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     getRevenueEntries(id),
     getProjects(),
     supabase.from('meetings').select('*, project:projects(id, name, emoji)').eq('linked_project_id', id).order('scheduled_at', { ascending: false }),
+    supabase.from('project_contacts').select('id, role_label, contact:contacts(*)').eq('project_id', id),
   ])
+
+  type LinkedContact = { id: string; role_label: string | null; contact: Contact }
+  const projectContacts = (projectContactsData.data ?? []) as unknown as LinkedContact[]
 
   const projectMeetings = (meetingsData.data ?? []) as Meeting[]
 
@@ -180,6 +185,27 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
             }
           >
               <NotesList projectId={id} notes={notes as any} />
+          </AccordionSection>
+        </div>
+
+        {/* ── Contacts accordion ── */}
+        <div className="mb-3">
+          <AccordionSection
+            icon=""
+            title="👥 Contacts"
+            defaultOpen={projectContacts.length > 0}
+            rightSlot={
+              projectContacts.length > 0 ? (
+                <span className="text-[12px] font-medium" style={{ color: '#6B7A82' }}>
+                  {projectContacts.length}
+                </span>
+              ) : null
+            }
+          >
+            <ProjectContacts
+              projectId={id}
+              initialContacts={projectContacts}
+            />
           </AccordionSection>
         </div>
 

@@ -306,6 +306,55 @@ export interface LeadNote {
   created_at: string
 }
 
+export type ContactStatus = 'active' | 'past' | 'paused'
+export type CommsKind = 'email' | 'call' | 'meeting' | 'note'
+
+export interface Contact {
+  id: string
+  name: string
+  company: string | null
+  role: string | null
+  email: string | null
+  phone: string | null
+  location: string | null
+  website: string | null
+  linkedin: string | null
+  status: ContactStatus
+  is_repeat: boolean
+  comms_style: string | null
+  decision_style: string | null
+  personal_context: string | null
+  future_opportunities: string | null
+  lead_id: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface ProjectContact {
+  id: string
+  project_id: string
+  contact_id: string
+  role_label: string | null
+  created_at: string
+}
+
+export interface CommsLogEntry {
+  id: string
+  contact_id: string
+  date: string            // ISO date YYYY-MM-DD
+  kind: CommsKind
+  summary: string
+  logged_by: string       // 'shaan' | 'deb'
+  created_at: string
+}
+
+// Joined types
+export interface ContactWithProjects extends Contact {
+  projects?: Array<{ id: string; name: string; emoji: string | null; stage: string; role_label: string | null }>
+  last_comms?: CommsLogEntry | null
+  comms_count?: number
+}
+
 // Composite type used by Home screen money moves list
 export interface MoneyMove {
   task: Task
