@@ -88,6 +88,11 @@ export interface ProjectDomain {
   expiry: string      // ISO date string YYYY-MM-DD
 }
 
+export interface ProjectDoc {
+  label: string       // e.g. "Claude Design", "PRD", "Branding Guide"
+  url: string
+}
+
 export interface LaunchGate {
   id: string          // stable slug e.g. 'domain_live'
   label: string
@@ -124,6 +129,8 @@ export interface Project {
   project_type: ProjectType | null
   launch_gates: LaunchGate[]
   pulse_values: PulseTileValue[]
+  staging_url: string | null
+  key_docs: ProjectDoc[]
   client_name: string | null
   client_email: string | null
   delivery_date: string | null

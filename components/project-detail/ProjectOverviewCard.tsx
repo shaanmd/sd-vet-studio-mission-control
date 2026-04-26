@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import type { Project, RevenueStream, ProjectDomain, ProjectType } from '@/lib/types/database'
+import type { Project, RevenueStream, ProjectDomain, ProjectType, ProjectDoc } from '@/lib/types/database'
 
 interface Props {
   project: Project
@@ -51,6 +51,66 @@ function expiryStatus(expiry: string): { label: string; color: string; bg: strin
     label: new Date(expiry).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }),
     color: '#6B7A82', bg: '#F5F0E8',
   }
+}
+
+// ─── Doc presets ───────────────────────────────────────────────────────────────
+
+const DOC_PRESETS = [
+  '🎨 Claude Design',
+  '📋 PRD / Spec',
+  '🎨 Branding guide',
+  '🎁 Lead magnet',
+  '🚀 Launch checklist',
+  '📄 Contract template',
+]
+
+const BLANK_DOC: ProjectDoc = { label: '', url: '' }
+
+function DocForm({ value, onChange, onSave, onCancel, presets }: {
+  value: ProjectDoc
+  onChange: (d: ProjectDoc) => void
+  onSave: () => void
+  onCancel: () => void
+  presets?: string[]
+}) {
+  return (
+    <div className="rounded-lg p-2.5 flex flex-col gap-2" style={{ background: '#F5F0E8', border: '1px solid #E8E2D6' }}>
+      {presets && !value.label && (
+        <div className="flex flex-wrap gap-1 mb-1">
+          {presets.map(p => (
+            <button key={p} type="button"
+              onClick={() => onChange({ ...value, label: p })}
+              className="px-2 py-0.5 rounded-full text-[11px] font-medium border"
+              style={{ background: '#fff', color: '#6B7A82', borderColor: '#E8E2D6' }}
+            >{p}</button>
+          ))}
+        </div>
+      )}
+      <input
+        autoFocus
+        value={value.label}
+        onChange={e => onChange({ ...value, label: e.target.value })}
+        placeholder="Label (e.g. Claude Design, PRD)"
+        className="w-full rounded px-2 py-1 text-[12px] border focus:outline-none"
+        style={{ borderColor: '#E8E2D6' }}
+      />
+      <input
+        value={value.url}
+        onChange={e => onChange({ ...value, url: e.target.value })}
+        placeholder="https://…"
+        type="url"
+        className="w-full rounded px-2 py-1 text-[12px] border focus:outline-none font-mono"
+        style={{ borderColor: '#E8E2D6' }}
+      />
+      <div className="flex gap-2">
+        <button onClick={onSave} disabled={!value.label.trim() || !value.url.trim()}
+          className="px-3 py-1 rounded text-[12px] font-semibold text-white disabled:opacity-40"
+          style={{ background: '#1E6B5E' }}
+        >Save</button>
+        <button onClick={onCancel} className="text-[12px] px-2" style={{ color: '#9AA5AC' }}>Cancel</button>
+      </div>
+    </div>
+  )
 }
 
 // ─── Sub-components ────────────────────────────────────────────────────────────
@@ -309,6 +369,16 @@ export default function ProjectOverviewCard({ project, bare = false }: Props) {
   const [newDomain, setNewDomain] = useState<ProjectDomain>(BLANK_DOMAIN)
   const [editingDomainIdx, setEditingDomainIdx] = useState<number | null>(null)
   const [editDomain, setEditDomain] = useState<ProjectDomain>(BLANK_DOMAIN)
+  // Staging URL
+  const [stagingUrl, setStagingUrl] = useState(project.staging_url ?? '')
+  const [stagingDirty, setStagingDirty] = useState(false)
+  const [stagingSaving, setStagingSaving] = useState(false)
+  // Key docs
+  const [docs, setDocs] = useState<ProjectDoc[]>(project.key_docs ?? [])
+  const [addingDoc, setAddingDoc] = useState(false)
+  const [newDoc, setNewDoc] = useState<ProjectDoc>(BLANK_DOC)
+  const [editingDocIdx, setEditingDocIdx] = useState<number | null>(null)
+  const [editDoc, setEditDoc] = useState<ProjectDoc>(BLANK_DOC)
   const [saving, setSaving] = useState(false)
 
   async function patchProject(patch: Record<string, unknown>) {
@@ -353,6 +423,37 @@ export default function ProjectOverviewCard({ project, bare = false }: Props) {
 
   async function handleRemoveDomain(idx: number) {
     await saveDomains(domains.filter((_, i) => i !== idx))
+  }
+
+  async function handleSaveStagingUrl() {
+    setStagingSaving(true)
+    await patchProject({ staging_url: stagingUrl.trim() || null })
+    setStagingSaving(false)
+    setStagingDirty(false)
+  }
+
+  async function saveDocs(next: ProjectDoc[]) {
+    setDocs(next)
+    await patchProject({ key_docs: next })
+  }
+
+  async function handleAddDoc() {
+    if (!newDoc.label.trim() || !newDoc.url.trim()) return
+    const url = newDoc.url.startsWith('http') ? newDoc.url : `https://${newDoc.url}`
+    await saveDocs([...docs, { label: newDoc.label.trim(), url }])
+    setNewDoc(BLANK_DOC)
+    setAddingDoc(false)
+  }
+
+  async function handleSaveDocEdit(idx: number) {
+    if (!editDoc.label.trim() || !editDoc.url.trim()) return
+    const url = editDoc.url.startsWith('http') ? editDoc.url : `https://${editDoc.url}`
+    await saveDocs(docs.map((d, i) => i === idx ? { label: editDoc.label.trim(), url } : d))
+    setEditingDocIdx(null)
+  }
+
+  async function handleRemoveDoc(idx: number) {
+    await saveDocs(docs.filter((_, i) => i !== idx))
   }
 
   async function handleTypeChange(t: ProjectType) {
@@ -538,6 +639,94 @@ export default function ProjectOverviewCard({ project, bare = false }: Props) {
             )}
           </div>
         </div>
+
+        {/* ── Staging URL ── */}
+        <div className="px-4 py-3">
+          <FieldLabel>🚧 Staging URL</FieldLabel>
+          <div className="flex items-center gap-2">
+            <input
+              value={stagingUrl}
+              onChange={e => { setStagingUrl(e.target.value); setStagingDirty(true) }}
+              onKeyDown={e => { if (e.key === 'Enter') handleSaveStagingUrl() }}
+              placeholder="https://staging.yourapp.com"
+              type="url"
+              className="flex-1 rounded-lg px-3 py-1.5 text-[13px] border focus:outline-none focus:ring-2 focus:ring-teal-500/30 font-mono"
+              style={{ borderColor: '#E8E2D6', color: '#1E2A35', fontSize: 12 }}
+            />
+            {stagingUrl && (
+              <a href={stagingUrl.startsWith('http') ? stagingUrl : `https://${stagingUrl}`}
+                target="_blank" rel="noopener noreferrer"
+                className="shrink-0 text-[12px] font-medium px-2 py-1 rounded-lg"
+                style={{ color: '#1E6B5E', background: '#E8F1EE' }}>
+                Open ↗
+              </a>
+            )}
+            {stagingDirty && (
+              <button onClick={handleSaveStagingUrl} disabled={stagingSaving}
+                className="shrink-0 px-3 py-1.5 rounded-lg text-[12px] font-semibold text-white disabled:opacity-50"
+                style={{ background: '#1E6B5E' }}>
+                {stagingSaving ? '…' : 'Save'}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* ── Key Docs ── */}
+        <div className="px-4 py-3">
+          <div className="flex items-center justify-between mb-2">
+            <FieldLabel>📄 Docs & files</FieldLabel>
+            {!addingDoc && (
+              <button onClick={() => setAddingDoc(true)}
+                className="text-[11px] font-semibold px-2 py-0.5 rounded"
+                style={{ color: '#1E6B5E' }}>
+                + Add
+              </button>
+            )}
+          </div>
+
+          {docs.length === 0 && !addingDoc && (
+            <p className="text-[12px] italic" style={{ color: '#CDC3AE' }}>
+              No docs yet — Claude Design, PRD, branding guide, lead magnets…
+            </p>
+          )}
+
+          <div className="flex flex-col gap-1.5">
+            {docs.map((d, i) => {
+              if (editingDocIdx === i) {
+                return (
+                  <DocForm key={i} value={editDoc} onChange={setEditDoc}
+                    onSave={() => handleSaveDocEdit(i)} onCancel={() => setEditingDocIdx(null)} />
+                )
+              }
+              return (
+                <div key={i}
+                  className="group flex items-center gap-2 rounded-lg px-3 py-2 text-[12px]"
+                  style={{ background: '#F5F0E8' }}>
+                  <a href={d.url} target="_blank" rel="noopener noreferrer"
+                    className="flex-1 font-semibold hover:underline truncate"
+                    style={{ color: '#1E6B5E' }}>
+                    {d.label}
+                  </a>
+                  <span className="text-[10px] truncate max-w-[120px]" style={{ color: '#9AA5AC' }}>
+                    {new URL(d.url).hostname.replace('www.', '')}
+                  </span>
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 shrink-0">
+                    <button onClick={() => { setEditingDocIdx(i); setEditDoc(d) }}
+                      className="text-[11px] px-1.5 rounded" style={{ color: '#6B7A82' }}>Edit</button>
+                    <button onClick={() => handleRemoveDoc(i)}
+                      className="text-[11px] px-1.5 rounded" style={{ color: '#C0392B' }}>✕</button>
+                  </div>
+                </div>
+              )
+            })}
+
+            {addingDoc && (
+              <DocForm value={newDoc} onChange={setNewDoc} presets={DOC_PRESETS}
+                onSave={handleAddDoc} onCancel={() => { setAddingDoc(false); setNewDoc(BLANK_DOC) }} />
+            )}
+          </div>
+        </div>
+
       </div>
     </div>
   )

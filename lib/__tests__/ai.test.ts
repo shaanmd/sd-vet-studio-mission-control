@@ -37,6 +37,8 @@ const makeProject = (overrides: Partial<Project> = {}): Project => ({
   delivery_date: null,
   ga4_property_id: null,
   monthly_visitors: null,
+  staging_url: null,
+  key_docs: [],
   created_by: null,
   updated_by: null,
   created_at: '2026-01-01T00:00:00Z',
