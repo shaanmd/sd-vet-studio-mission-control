@@ -5,17 +5,17 @@ import type { Project, RevenueStream, ProjectDomain, ProjectType } from '@/lib/t
 
 interface Props {
   project: Project
+  bare?: boolean  // when true, renders without outer card wrapper (used inside accordions)
 }
 
 // ─── Project Type ──────────────────────────────────────────────────────────────
 
 const PROJECT_TYPES: Array<{ value: ProjectType; label: string; color: string; bg: string }> = [
-  { value: 'website_build', label: '🌐 Website Build',    color: '#1D4ED8', bg: '#DBEAFE' },
-  { value: 'saas',          label: '💻 SaaS / Web App',   color: '#1E6B5E', bg: '#E8F4F0' },
-  { value: 'course',        label: '🎓 Course',           color: '#7C3AED', bg: '#EDE9FE' },
-  { value: 'consulting',    label: '💼 Consulting',       color: '#92400E', bg: '#FEF3C7' },
-  { value: 'content',       label: '📱 Content',          color: '#9D174D', bg: '#FCE7F3' },
-  { value: 'tool',          label: '🔧 Tool',             color: '#374151', bg: '#F3F4F6' },
+  { value: 'website_build', label: '🌐 Website',    color: '#1E6B5E', bg: '#E8F1EE' },
+  { value: 'saas',          label: '💻 SaaS / App', color: '#7B5EA8', bg: '#EEE8F6' },
+  { value: 'course',        label: '🎓 Course',     color: '#D4A853', bg: '#FBF3DE' },
+  { value: 'consulting',    label: '💼 Consulting',  color: '#3A6C98', bg: '#E8F0F8' },
+  { value: 'other',         label: '📦 Other',       color: '#6B7A82', bg: '#F5F0E8' },
 ]
 
 // ─── Overview fields ───────────────────────────────────────────────────────────
@@ -294,7 +294,7 @@ function WebsiteBuildPanel({ project, onPatch }: { project: Project; onPatch: (p
 
 // ─── Main component ────────────────────────────────────────────────────────────
 
-export default function ProjectOverviewCard({ project }: Props) {
+export default function ProjectOverviewCard({ project, bare = false }: Props) {
   const router = useRouter()
   const [projectType, setProjectType] = useState<ProjectType | null>(project.project_type ?? null)
   const [editing, setEditing] = useState<string | null>(null)
@@ -363,11 +363,13 @@ export default function ProjectOverviewCard({ project }: Props) {
 
   const typeInfo = PROJECT_TYPES.find(t => t.value === projectType)
 
-  return (
-    <div className="rounded-2xl overflow-hidden" style={{ background: '#fff', border: '1px solid #E8E2D6' }}>
-      <div className="px-4 py-3.5" style={{ borderBottom: '1px solid #F5F0E8' }}>
-        <span className="font-semibold text-[13px]" style={{ color: '#1E2A35' }}>Overview</span>
-      </div>
+  const inner = (
+    <div>
+      {!bare && (
+        <div className="px-4 py-3.5" style={{ borderBottom: '1px solid #F5F0E8' }}>
+          <span className="font-semibold text-[13px]" style={{ color: '#1E2A35' }}>Overview</span>
+        </div>
+      )}
 
       {/* Project Type */}
       <div className="px-4 py-3" style={{ borderBottom: '1px solid #F5F0E8' }}>
@@ -537,6 +539,14 @@ export default function ProjectOverviewCard({ project }: Props) {
           </div>
         </div>
       </div>
+    </div>
+  )
+
+  if (bare) return inner
+
+  return (
+    <div className="rounded-2xl overflow-hidden" style={{ background: '#fff', border: '1px solid #E8E2D6' }}>
+      {inner}
     </div>
   )
 }

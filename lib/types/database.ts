@@ -41,7 +41,7 @@ export type ActivityAction =
   | 'project_pinned'
   | 'revenue_logged'
 
-export type ProjectType = 'website_build' | 'saas' | 'course' | 'consulting' | 'content' | 'tool'
+export type ProjectType = 'website_build' | 'saas' | 'course' | 'consulting' | 'other'
 
 export type RevenueScore = 'low' | 'medium' | 'high'
 
@@ -88,6 +88,21 @@ export interface ProjectDomain {
   expiry: string      // ISO date string YYYY-MM-DD
 }
 
+export interface LaunchGate {
+  id: string          // stable slug e.g. 'domain_live'
+  label: string
+  hint?: string
+  checked: boolean
+  custom: boolean     // user-added, can be removed
+  sort_order: number
+}
+
+export interface PulseTileValue {
+  tile_id: string     // e.g. 'enrolled_students', 'mrr'
+  value: number | null
+  label_override?: string
+}
+
 export interface Project {
   id: string
   name: string
@@ -107,6 +122,8 @@ export interface Project {
   target_audience: string | null
   domains: ProjectDomain[]
   project_type: ProjectType | null
+  launch_gates: LaunchGate[]
+  pulse_values: PulseTileValue[]
   client_name: string | null
   client_email: string | null
   delivery_date: string | null

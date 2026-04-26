@@ -7,12 +7,13 @@ const NAV_ITEMS = [
   { href: '/',           label: 'Home',      shortcut: '⌘1' },
   { href: '/projects',  label: 'Projects',   shortcut: '⌘2' },
   { href: '/finance',   label: 'Finance',    shortcut: '⌘3' },
-  { href: '/leads',     label: 'Leads',      shortcut: '⌘4' },
-  { href: '/log',       label: 'Log & Wins', shortcut: '⌘5' },
-  { href: '/meetings',  label: 'Meetings',   shortcut: '⌘6' },
-  { href: '/marketing', label: 'Marketing',  shortcut: '⌘7' },
-  { href: '/resources', label: 'Resources',  shortcut: '⌘8' },
-  { href: '/settings',  label: 'Settings',   shortcut: '⌘9' },
+  { href: '/crm',       label: 'CRM',        shortcut: '⌘4' },
+  { href: '/leads',     label: 'Leads',      shortcut: '⌘5' },
+  { href: '/log',       label: 'Log & Wins', shortcut: '⌘6' },
+  { href: '/meetings',  label: 'Meetings',   shortcut: '⌘7' },
+  { href: '/marketing', label: 'Marketing',  shortcut: '⌘8' },
+  { href: '/resources', label: 'Resources',  shortcut: '⌘9' },
+  { href: '/settings',  label: 'Settings',   shortcut: '⌘0' },
 ]
 
 export default function Sidebar() {
