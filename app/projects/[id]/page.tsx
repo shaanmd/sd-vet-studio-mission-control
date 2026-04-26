@@ -160,6 +160,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
               projectId={id}
               tasks={tasks}
               allProjects={allProjects.map(p => ({ id: p.id, name: p.name, emoji: p.emoji }))}
+              hideHeader
             />
           </AccordionSection>
         </div>

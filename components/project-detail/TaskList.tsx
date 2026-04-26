@@ -54,9 +54,10 @@ interface Props {
   projectId: string
   tasks: Task[]
   allProjects?: { id: string; name: string; emoji: string | null }[]
+  hideHeader?: boolean  // suppress the inner card header when wrapped in AccordionSection
 }
 
-export default function TaskList({ projectId, tasks: initialTasks, allProjects = [] }: Props) {
+export default function TaskList({ projectId, tasks: initialTasks, allProjects = [], hideHeader = false }: Props) {
   const router = useRouter()
   const [localTasks, setLocalTasks] = useState<Task[]>(initialTasks)
   const [adding, setAdding] = useState(false)
@@ -167,20 +168,41 @@ export default function TaskList({ projectId, tasks: initialTasks, allProjects =
 
   async function handleSaveEdit(taskId: string, originalProjectId: string) {
     if (!editTitle.trim()) { setEditingId(null); return }
+
+    // Capture ALL values before any state changes (same pattern as handleAdd)
+    const patch = {
+      title: editTitle.trim(),
+      due_date: editDueDate || null,
+      energy: editEnergy || null,
+      recurrence: editRecurrence || null,
+      assigned_to: editAssignee || null,
+    }
     const movingProject = editProjectId && editProjectId !== originalProjectId
-    await fetch(`/api/tasks/${taskId}`, {
+    if (movingProject) {
+      Object.assign(patch, { project_id: editProjectId, is_next_step: false })
+    }
+
+    // Optimistic update — show changes immediately
+    setLocalTasks(prev => prev.map(t =>
+      t.id === taskId
+        ? { ...t, ...patch, project_id: movingProject ? editProjectId : t.project_id }
+        : t
+    ))
+    setEditingId(null)
+
+    const res = await fetch(`/api/tasks/${taskId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title: editTitle.trim(),
-        due_date: editDueDate || null,
-        energy: editEnergy || null,
-        recurrence: editRecurrence || null,
-        assigned_to: editAssignee || null,
-        ...(movingProject && { project_id: editProjectId, is_next_step: false }),
-      }),
+      body: JSON.stringify(patch),
     })
-    setEditingId(null)
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'Unknown error' }))
+      console.error('Task edit failed:', err)
+      alert(`Could not save task: ${err.error ?? 'Unknown error'}`)
+      // Rollback: revert to server data
+      setLocalTasks(initialTasks)
+    }
     router.refresh()
   }
 
@@ -218,21 +240,37 @@ export default function TaskList({ projectId, tasks: initialTasks, allProjects =
   }
 
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ background: '#fff', border: '1px solid #E8E2D6' }}>
-      <div className="flex items-center justify-between px-4 py-3.5" style={{ borderBottom: '1px solid #F5F0E8' }}>
-        <span className="font-semibold text-[13px]" style={{ color: '#1E2A35' }}>
-          Tasks <span style={{ color: '#9AA5AC', fontWeight: 400 }}>({activeTasks.length})</span>
-        </span>
-        <button
-          onClick={() => setAdding(true)}
-          className="text-[12px] font-semibold"
-          style={{ color: '#1E6B5E' }}
-        >
-          + Add
-        </button>
-      </div>
+    <div className={hideHeader ? '' : 'rounded-2xl overflow-hidden'} style={hideHeader ? {} : { background: '#fff', border: '1px solid #E8E2D6' }}>
+      {!hideHeader && (
+        <div className="flex items-center justify-between px-4 py-3.5" style={{ borderBottom: '1px solid #F5F0E8' }}>
+          <span className="font-semibold text-[13px]" style={{ color: '#1E2A35' }}>
+            Tasks <span style={{ color: '#9AA5AC', fontWeight: 400 }}>({activeTasks.length})</span>
+          </span>
+          <button
+            onClick={() => setAdding(true)}
+            className="text-[12px] font-semibold"
+            style={{ color: '#1E6B5E' }}
+          >
+            + Add
+          </button>
+        </div>
+      )}
+      {hideHeader && (
+        <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: activeTasks.length > 0 || adding ? '1px solid #F5F0E8' : 'none' }}>
+          <span className="text-[12px]" style={{ color: '#9AA5AC' }}>
+            {activeTasks.length === 0 && !adding ? 'No tasks yet.' : ''}
+          </span>
+          <button
+            onClick={() => setAdding(true)}
+            className="text-[12px] font-semibold"
+            style={{ color: '#1E6B5E' }}
+          >
+            + Add task
+          </button>
+        </div>
+      )}
 
-      {activeTasks.length === 0 && !adding && (
+      {activeTasks.length === 0 && !adding && !hideHeader && (
         <p className="px-4 py-4 text-[13px]" style={{ color: '#9AA5AC' }}>No tasks yet.</p>
       )}
 
