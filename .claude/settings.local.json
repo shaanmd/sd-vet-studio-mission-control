@@ -34,7 +34,12 @@
       "Bash(mkdir -p \"C:/Users/summe/.config/superpowers/worktrees/sd-vet-studio-mission-control/phase5-ai/app/api/ai/next-step\")",
       "Bash(mkdir -p \"C:/Users/summe/.config/superpowers/worktrees/sd-vet-studio-mission-control/phase5-ai/app/api/ai/win-summary\")",
       "Bash(mkdir -p \"C:/Users/summe/.config/superpowers/worktrees/sd-vet-studio-mission-control/phase5-ai/app/api/ai/tag-energy\")",
-      "mcp__578723d2-f663-4fad-bdca-ebd4ac534a8d__get_runtime_logs"
+      "mcp__578723d2-f663-4fad-bdca-ebd4ac534a8d__get_runtime_logs",
+      "Bash(xargs wc *)",
+      "Bash(npx skills *)",
+      "WebFetch(domain:api.anthropic.com)",
+      "Read(//tmp/design_bundle/sdvetstudiomissioncontrol/project/**)",
+      "Bash(git push *)"
     ]
   }
 }
