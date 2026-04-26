@@ -64,7 +64,7 @@ export default async function HomePage() {
         }
       />
 
-      <div className="flex-1 overflow-auto pb-24 md:pb-7" style={{ padding: '24px 28px' }}>
+      <div className="pb-24 md:pb-7" style={{ padding: '24px 28px' }}>
         {/* Greeting strip */}
         <div className="flex items-end justify-between mb-5">
           <Greeting name={currentName} />

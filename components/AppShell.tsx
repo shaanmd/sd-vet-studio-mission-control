@@ -16,7 +16,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     <AuthProvider>
       <div className="flex h-screen overflow-hidden bg-[#F5F0E8]">
         <Sidebar />
-        <main className="flex-1 flex flex-col overflow-hidden">
+        <main className="flex-1 overflow-auto">
           {children}
         </main>
         <BottomNav />

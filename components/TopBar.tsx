@@ -9,7 +9,7 @@ interface TopBarProps {
 export default function TopBar({ crumbs, right }: TopBarProps) {
   return (
     <div
-      className="flex items-center justify-between px-7 py-3.5 shrink-0"
+      className="flex items-center justify-between px-7 py-3.5 sticky top-0 z-10"
       style={{
         borderBottom: '1px solid #E8E2D6',
         background: 'rgba(245,240,232,0.85)',

@@ -109,7 +109,7 @@ export default async function ProjectsPage({
         }
       />
 
-      <div className="flex-1 overflow-auto pb-24 md:pb-7" style={{ padding: '22px 28px' }}>
+      <div className="pb-24 md:pb-7" style={{ padding: '22px 28px' }}>
         {/* Heading row */}
         <div className="flex items-end justify-between mb-4">
           <div>
