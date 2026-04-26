@@ -80,6 +80,12 @@ export interface Profile {
   created_at: string
 }
 
+export interface ProjectDomain {
+  name: string        // e.g. vetalign.com.au
+  registrar: string   // e.g. Cloudflare, GoDaddy
+  expiry: string      // ISO date string YYYY-MM-DD
+}
+
 export interface Project {
   id: string
   name: string
@@ -97,6 +103,7 @@ export interface Project {
   goals: string | null
   tech_stack: string | null
   target_audience: string | null
+  domains: ProjectDomain[]
   created_by: string | null
   updated_by: string | null
   created_at: string
