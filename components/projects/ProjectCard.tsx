@@ -7,8 +7,10 @@ const STAGE_PILLS: Record<string, { bg: string; color: string }> = {
   someday:     { bg: '#E5EEF7', color: '#3A6C98' },
   exploring:   { bg: '#E5EEF7', color: '#3A6C98' },
   building:    { bg: '#F5E7C8', color: '#8A5A1E' },
+  beta:        { bg: '#FDE8F7', color: '#8B2EB0' },
   live:        { bg: '#D4F0EE', color: '#1E6B5E' },
   maintenance: { bg: '#EFEAE0', color: '#6B7A82' },
+  archived:    { bg: '#F3F4F6', color: '#9AA5AC' },
 }
 
 interface Props {
@@ -43,6 +45,11 @@ export default function ProjectCard({ project, nextStep }: Props) {
           {project.stage}
         </span>
       </div>
+
+      {/* Summary */}
+      {project.summary && (
+        <p className="text-[12px] mb-2 line-clamp-1" style={{ color: '#6B7A82' }}>{project.summary}</p>
+      )}
 
       {/* Next step */}
       {nextStep ? (

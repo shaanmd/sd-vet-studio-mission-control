@@ -7,7 +7,7 @@ export async function createProject(input: {
   stage?: Stage
   emoji?: string
   revenue_score?: RevenueScore
-  revenue_stream?: RevenueStream
+  revenue_stream?: RevenueStream[]
   created_by: string
 }): Promise<Project> {
   const supabase = createClient()

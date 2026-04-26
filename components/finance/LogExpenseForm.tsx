@@ -55,8 +55,9 @@ export default function LogExpenseForm({ projects, onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
-      <div className="bg-white rounded-2xl w-full max-w-md p-6 max-h-[92vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-black/40 overflow-y-auto">
+      <div className="flex min-h-full items-center justify-center p-4">
+      <div className="bg-white rounded-2xl w-full max-w-md p-6">
         <h2 className="text-lg font-bold text-gray-800 mb-4">Log Expense</h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <input
@@ -117,6 +118,7 @@ export default function LogExpenseForm({ projects, onClose }: Props) {
             </button>
           </div>
         </form>
+      </div>
       </div>
     </div>
   )

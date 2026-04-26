@@ -8,6 +8,7 @@ const STREAM_LABELS: Record<string, string> = {
   subscription: '🔄 Subscriptions',
   inapp: '📱 In-app / tokens',
   consulting: '💼 Consulting',
+  website_builds: '🌐 Website builds',
   sponsorship: '🤝 Sponsorship',
   affiliate: '🔗 Affiliate',
   other: '📦 Other',

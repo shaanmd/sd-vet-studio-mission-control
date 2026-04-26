@@ -3,8 +3,13 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Project } from '@/lib/types/database'
 
-const STAGES = ['inbox', 'someday', 'exploring', 'building', 'live', 'maintenance', 'archived'] as const
+const STAGES = ['live', 'beta', 'building', 'exploring', 'someday', 'inbox', 'maintenance', 'archived'] as const
 const REVENUE_SCORES = ['low', 'medium', 'high'] as const
+const OWNERS = [
+  { value: 'shaan', label: '👩‍💻 Shaan' },
+  { value: 'deb', label: '👩‍⚕️ Deb' },
+  { value: 'both', label: '👥 Both' },
+] as const
 
 interface Props {
   project: Project
@@ -18,6 +23,7 @@ export default function EditProjectForm({ project, onClose }: Props) {
   const [stage, setStage] = useState(project.stage)
   const [summary, setSummary] = useState(project.summary ?? '')
   const [revenueScore, setRevenueScore] = useState(project.revenue_score)
+  const [owner, setOwner] = useState<'shaan' | 'deb' | 'both'>(project.owner ?? 'both')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -28,22 +34,32 @@ export default function EditProjectForm({ project, onClose }: Props) {
     const res = await fetch(`/api/projects/${project.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: name.trim(), emoji: emoji || null, stage, summary: summary || null, revenue_score: revenueScore }),
+      body: JSON.stringify({ name: name.trim(), emoji: emoji || null, stage, summary: summary || null, revenue_score: revenueScore, owner }),
     })
     if (!res.ok) { setError('Failed to save'); setSaving(false); return }
     router.refresh()
     onClose()
   }
 
+  async function handleArchive() {
+    await fetch(`/api/projects/${project.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stage: 'archived' }),
+    })
+    router.push('/projects')
+  }
+
   async function handleDelete() {
-    if (!confirm(`Delete "${project.name}"? This cannot be undone.`)) return
+    if (!confirm(`Permanently delete "${project.name}"? This cannot be undone.`)) return
     await fetch(`/api/projects/${project.id}`, { method: 'DELETE' })
     router.push('/projects')
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
-      <div className="bg-white rounded-2xl w-full max-w-md p-6 max-h-[92vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-black/40 overflow-y-auto">
+      <div className="flex min-h-full items-center justify-center p-4">
+      <div className="bg-white rounded-2xl w-full max-w-md p-6">
         <h2 className="text-lg font-bold text-gray-800 mb-4">Edit Project</h2>
         <form onSubmit={handleSave} className="flex flex-col gap-3">
           <div className="flex gap-2">
@@ -59,13 +75,33 @@ export default function EditProjectForm({ project, onClose }: Props) {
               {REVENUE_SCORES.map(s => <option key={s} value={s}>{'💰'.repeat(s === 'low' ? 1 : s === 'medium' ? 2 : 3)} {s}</option>)}
             </select>
           </div>
+
+          {/* Owner */}
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">Owner</label>
+            <div className="flex gap-2">
+              {OWNERS.map(o => (
+                <button key={o.value} type="button" onClick={() => setOwner(o.value)}
+                  className="flex-1 py-2 rounded-lg text-sm font-medium border transition-colors"
+                  style={owner === o.value ? { borderColor: '#1E6B5E', background: '#E8F4F0', color: '#1E6B5E' } : { borderColor: '#E8E2D6', color: '#6B7280' }}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {error && <p className="text-red-600 text-sm">{error}</p>}
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={onClose} className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-600 font-medium">Cancel</button>
             <button type="submit" disabled={saving} className="flex-1 py-3 rounded-xl bg-teal-700 text-white font-medium disabled:opacity-50">{saving ? 'Saving…' : 'Save'}</button>
           </div>
-          <button type="button" onClick={handleDelete} className="w-full py-2 text-red-500 text-sm font-medium">Delete project…</button>
+          <div className="flex gap-3">
+            <button type="button" onClick={handleArchive} className="flex-1 py-2 text-gray-500 text-sm font-medium rounded-lg border border-gray-200">📦 Archive</button>
+            <button type="button" onClick={handleDelete} className="flex-1 py-2 text-red-500 text-sm font-medium">Delete…</button>
+          </div>
         </form>
+      </div>
       </div>
     </div>
   )

@@ -20,6 +20,7 @@ export default function NotesList({ projectId, notes }: Props) {
   const [editContent, setEditContent] = useState('')
   const [saving, setSaving] = useState(false)
   const [showAll, setShowAll] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const displayed = showAll ? notes : notes.slice(0, 5)
 
@@ -38,8 +39,8 @@ export default function NotesList({ projectId, notes }: Props) {
     router.refresh()
   }
 
-  async function handleEdit(noteId: string) {
-    if (!editContent.trim()) return
+  async function handleSaveEdit(noteId: string) {
+    if (!editContent.trim()) { setEditingId(null); return }
     await fetch(`/api/projects/${projectId}/notes`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -50,86 +51,110 @@ export default function NotesList({ projectId, notes }: Props) {
   }
 
   async function handleDelete(noteId: string) {
+    setDeletingId(noteId)
     await fetch(`/api/projects/${projectId}/notes`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ noteId }),
     })
+    setDeletingId(null)
     router.refresh()
   }
 
   return (
-    <div className="bg-white rounded-xl p-4">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="font-semibold text-gray-700">Notes</h3>
-        <button onClick={() => setAdding(true)} className="text-sm text-teal-600 font-medium">+ Add</button>
+    <div className="rounded-2xl overflow-hidden" style={{ background: '#fff', border: '1px solid #E8E2D6' }}>
+      <div className="flex items-center justify-between px-4 py-3.5" style={{ borderBottom: '1px solid #F5F0E8' }}>
+        <span className="font-semibold text-[13px]" style={{ color: '#1E2A35' }}>
+          Notes <span style={{ color: '#9AA5AC', fontWeight: 400 }}>({notes.length})</span>
+        </span>
+        <button onClick={() => { setAdding(true); setEditingId(null) }} className="text-[12px] font-semibold" style={{ color: '#1E6B5E' }}>
+          + Add
+        </button>
       </div>
 
+      {/* Add form */}
       {adding && (
-        <form onSubmit={handleAdd} className="flex flex-col gap-2 mb-3">
+        <form onSubmit={handleAdd} className="px-4 py-3 flex flex-col gap-2" style={{ borderBottom: '1px solid #F5F0E8' }}>
           <textarea
             autoFocus
             value={newContent}
             onChange={e => setNewContent(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Escape') { setAdding(false); setNewContent('') } }}
             placeholder="Write a note…"
             rows={3}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-[13px] resize-none focus:outline-none focus:ring-2 focus:ring-teal-500/30"
           />
           <div className="flex gap-2">
-            <button type="button" onClick={() => setAdding(false)} className="flex-1 py-2 border border-gray-200 rounded-lg text-gray-500 text-sm">Cancel</button>
-            <button type="submit" disabled={saving} className="flex-1 py-2 bg-teal-700 text-white rounded-lg text-sm font-medium disabled:opacity-50">{saving ? 'Saving…' : 'Add Note'}</button>
+            <button type="button" onClick={() => { setAdding(false); setNewContent('') }}
+              className="px-3 py-1.5 text-sm text-gray-400">Cancel</button>
+            <button type="submit" disabled={saving || !newContent.trim()}
+              className="flex-1 py-1.5 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
+              style={{ background: '#1E6B5E' }}
+            >{saving ? 'Saving…' : 'Add note'}</button>
           </div>
         </form>
       )}
 
-      {notes.length === 0 && !adding && <p className="text-gray-400 text-sm">No notes yet.</p>}
+      {notes.length === 0 && !adding && (
+        <p className="px-4 py-4 text-[13px]" style={{ color: '#9AA5AC' }}>No notes yet.</p>
+      )}
 
-      {displayed.map(note => (
-        <div key={note.id} className="py-2 border-b border-gray-50 last:border-0 group">
+      {displayed.map((note, i) => (
+        <div
+          key={note.id}
+          className="group px-4 py-3"
+          style={{ borderBottom: i < displayed.length - 1 ? '1px solid #F5F0E8' : 'none' }}
+        >
           {editingId === note.id ? (
             <div className="flex flex-col gap-2">
               <textarea
                 autoFocus
                 value={editContent}
                 onChange={e => setEditContent(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Escape') setEditingId(null)
+                  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSaveEdit(note.id)
+                }}
                 rows={3}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none"
+                className="w-full border border-teal-300 rounded-lg px-3 py-2 text-[13px] resize-none focus:outline-none focus:ring-2 focus:ring-teal-500/30"
               />
               <div className="flex gap-2">
-                <button onClick={() => setEditingId(null)} className="flex-1 py-1.5 border border-gray-200 rounded-lg text-gray-500 text-sm">Cancel</button>
-                <button onClick={() => handleEdit(note.id)} className="flex-1 py-1.5 bg-teal-700 text-white rounded-lg text-sm font-medium">Save</button>
+                <button
+                  onClick={() => handleDelete(note.id)}
+                  disabled={deletingId === note.id}
+                  className="text-[12px] px-2 py-1 rounded-lg"
+                  style={{ color: '#C0392B' }}
+                >Delete</button>
+                <button onClick={() => setEditingId(null)} className="text-[12px] px-3 py-1 rounded-lg text-gray-400">Cancel</button>
+                <button onClick={() => handleSaveEdit(note.id)}
+                  className="flex-1 py-1 rounded-lg text-[12px] font-semibold text-white"
+                  style={{ background: '#1E6B5E' }}>Save</button>
               </div>
             </div>
           ) : (
             <>
-              <p className="text-sm text-gray-800 whitespace-pre-wrap">{note.content}</p>
-              <div className="flex items-center justify-between mt-0.5">
-                <p className="text-xs text-gray-400">
-                  {note.author?.name ?? 'Auto'} · {new Date(note.created_at).toLocaleDateString('en-AU')}
-                </p>
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={() => { setEditingId(note.id); setEditContent(note.content) }}
-                    className="text-xs text-gray-400 hover:text-teal-600 px-1"
-                  >✏️</button>
-                  <button
-                    onClick={() => handleDelete(note.id)}
-                    className="text-xs text-gray-400 hover:text-red-500 px-1"
-                  >🗑</button>
-                </div>
-              </div>
+              <p
+                className="text-[13px] whitespace-pre-wrap cursor-text hover:bg-black/[0.03] rounded-lg px-2 py-1 -mx-2 -my-1 transition-colors"
+                style={{ color: '#1E2A35' }}
+                onClick={() => { setEditingId(note.id); setEditContent(note.content); setAdding(false) }}
+                title="Click to edit"
+              >
+                {note.content}
+              </p>
+              <p className="text-[11px] mt-1.5 px-0" style={{ color: '#9AA5AC' }}>
+                {note.author?.name ?? 'Auto'} · {new Date(note.created_at).toLocaleDateString('en-AU')}
+              </p>
             </>
           )}
         </div>
       ))}
 
       {notes.length > 5 && (
-        <button
-          onClick={() => setShowAll(!showAll)}
-          className="mt-2 text-xs text-teal-600 font-medium"
-        >
-          {showAll ? 'Show less' : `Show ${notes.length - 5} more…`}
-        </button>
+        <div className="px-4 py-2" style={{ borderTop: '1px solid #F5F0E8' }}>
+          <button onClick={() => setShowAll(!showAll)} className="text-[12px] font-medium" style={{ color: '#1E6B5E' }}>
+            {showAll ? 'Show less' : `Show ${notes.length - 5} more…`}
+          </button>
+        </div>
       )}
     </div>
   )

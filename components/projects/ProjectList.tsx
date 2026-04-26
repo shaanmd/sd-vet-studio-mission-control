@@ -22,6 +22,7 @@ const stageMeta: Record<Stage, { icon: string; label: string; color: string }> =
   building: { icon: '\uD83D\uDD28', label: 'Building', color: '#1E6B5E' },
   exploring: { icon: '\uD83D\uDD0D', label: 'Exploring', color: '#b45309' },
   live: { icon: '\uD83D\uDFE2', label: 'Live', color: '#059669' },
+  beta: { icon: '\uD83E\uDDEA', label: 'Beta', color: '#8B2EB0' },
   someday: { icon: '\uD83D\uDCA4', label: 'Someday / Maybe', color: '#8899a6' },
   maintenance: { icon: '\uD83D\uDD27', label: 'Maintenance', color: '#6b7280' },
   archived: { icon: '\uD83D\uDDC4\uFE0F', label: 'Archived', color: '#9ca3af' },

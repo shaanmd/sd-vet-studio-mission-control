@@ -1,12 +1,34 @@
 // components/projects/ProjectsClientWrapper.tsx
 'use client'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import NewProjectModal from './NewProjectModal'
 
 export default function ProjectsClientWrapper() {
   const [open, setOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const router = useRouter()
+
+  useEffect(() => { setMounted(true) }, [])
+
+  const modal = open ? (
+    <NewProjectModal
+      onClose={() => setOpen(false)}
+      onSubmit={async (values) => {
+        const res = await fetch('/api/projects', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(values),
+        })
+        if (!res.ok) throw new Error('Failed')
+        const project = await res.json()
+        setOpen(false)
+        router.push(`/projects/${project.id}`)
+        return project
+      }}
+    />
+  ) : null
 
   return (
     <>
@@ -16,23 +38,7 @@ export default function ProjectsClientWrapper() {
       >
         + New
       </button>
-      {open && (
-        <NewProjectModal
-          onClose={() => setOpen(false)}
-          onSubmit={async (values) => {
-            const res = await fetch('/api/projects', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(values),
-            })
-            if (!res.ok) throw new Error('Failed')
-            const project = await res.json()
-            setOpen(false)
-            router.push(`/projects/${project.id}`)
-            return project
-          }}
-        />
-      )}
+      {mounted && modal ? createPortal(modal, document.body) : null}
     </>
   )
 }

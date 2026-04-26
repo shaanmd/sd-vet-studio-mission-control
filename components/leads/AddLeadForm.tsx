@@ -96,8 +96,9 @@ export default function AddLeadForm({ projects: initialProjects, defaultProjectI
   const inputCls = 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/30'
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
-      <div className="bg-white rounded-2xl w-full max-w-md p-6 max-h-[92vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-black/40 overflow-y-auto">
+      <div className="flex min-h-full items-center justify-center p-4">
+      <div className="bg-white rounded-2xl w-full max-w-md p-6">
         <h2 className="text-lg font-bold text-gray-800 mb-4">Add Lead</h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
 
@@ -212,6 +213,7 @@ export default function AddLeadForm({ projects: initialProjects, defaultProjectI
             </button>
           </div>
         </form>
+      </div>
       </div>
     </div>
   )

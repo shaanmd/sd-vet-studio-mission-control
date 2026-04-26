@@ -2,153 +2,118 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createProjectLink, deleteProjectLink } from '@/lib/mutations/links'
 import type { ProjectLink } from '@/lib/types/database'
 
-export default function KeyLinks({
-  projectId,
-  links,
-}: {
-  projectId: string
-  links: ProjectLink[]
-}) {
+const LINK_ICONS: Record<string, string> = {
+  github: '🐙', vercel: '▲', figma: '🎨', notion: '📝', drive: '📁',
+  docs: '📄', slack: '💬', loom: '🎥', linear: '📋', stripe: '💳',
+}
+
+function guessIcon(url: string, label: string): string {
+  const combined = (url + label).toLowerCase()
+  for (const [key, icon] of Object.entries(LINK_ICONS)) {
+    if (combined.includes(key)) return icon
+  }
+  return '🔗'
+}
+
+function normaliseUrl(url: string): string {
+  if (!url.startsWith('http://') && !url.startsWith('https://')) return 'https://' + url
+  return url
+}
+
+export default function KeyLinks({ projectId, links }: { projectId: string; links: ProjectLink[] }) {
   const router = useRouter()
-  const [showAddForm, setShowAddForm] = useState(false)
   const [label, setLabel] = useState('')
   const [url, setUrl] = useState('')
-  const [icon, setIcon] = useState('')
   const [adding, setAdding] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [showForm, setShowForm] = useState(false)
 
-  async function handleAdd() {
-    if (!label.trim() || !url.trim()) return
+  async function handleAdd(e: React.FormEvent) {
+    e.preventDefault()
+    if (!url.trim()) return
     setAdding(true)
-    try {
-      await createProjectLink({
-        project_id: projectId,
-        label: label.trim(),
-        url: url.trim(),
-        icon: icon.trim() || undefined,
-      })
-      setLabel('')
-      setUrl('')
-      setIcon('')
-      setShowAddForm(false)
-      router.refresh()
-    } catch {
-      alert('Failed to add link.')
-    } finally {
-      setAdding(false)
-    }
+    const finalUrl = normaliseUrl(url.trim())
+    const finalLabel = label.trim() || finalUrl.replace(/^https?:\/\//, '').split('/')[0]
+    const icon = guessIcon(finalUrl, finalLabel)
+    await fetch(`/api/projects/${projectId}/links`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ label: finalLabel, url: finalUrl, icon }),
+    })
+    setLabel(''); setUrl(''); setShowForm(false); setAdding(false)
+    router.refresh()
   }
 
   async function handleDelete(linkId: string) {
-    if (deletingId) return
     setDeletingId(linkId)
-    try {
-      await deleteProjectLink(linkId)
-      router.refresh()
-    } catch {
-      alert('Failed to delete link.')
-    } finally {
-      setDeletingId(null)
-    }
+    await fetch(`/api/projects/${projectId}/links?linkId=${linkId}`, { method: 'DELETE' })
+    setDeletingId(null)
+    router.refresh()
   }
 
   return (
-    <div className="mb-4">
-      <div className="flex items-center justify-between mb-2">
-        <h2 className="text-[11px] uppercase tracking-[2px] text-[#1E6B5E] font-semibold">
-          Key Links
-        </h2>
-        <button
-          onClick={() => setShowAddForm(!showAddForm)}
-          className="text-xs font-medium text-[#1E6B5E]"
-        >
+    <div className="rounded-2xl overflow-hidden" style={{ background: '#fff', border: '1px solid #E8E2D6' }}>
+      <div className="flex items-center justify-between px-4 py-3.5" style={{ borderBottom: '1px solid #F5F0E8' }}>
+        <span className="font-semibold text-[13px]" style={{ color: '#1E2A35' }}>Key Links</span>
+        <button onClick={() => setShowForm(v => !v)} className="text-[12px] font-semibold" style={{ color: '#1E6B5E' }}>
           + Add
         </button>
       </div>
 
-      {showAddForm && (
-        <div className="bg-white rounded-xl border border-black/[0.08] p-3 mb-2 space-y-2">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={icon}
-              onChange={(e) => setIcon(e.target.value)}
-              placeholder="Icon"
-              className="w-12 text-center text-sm border border-black/10 rounded-lg px-1 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#1E6B5E]/30"
-            />
-            <input
-              type="text"
-              value={label}
-              onChange={(e) => setLabel(e.target.value)}
-              placeholder="Label (e.g. GitHub Repo)"
-              className="flex-1 text-sm border border-black/10 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#1E6B5E]/30"
-              autoFocus
-            />
-          </div>
+      {/* Inline add form */}
+      {showForm && (
+        <form onSubmit={handleAdd} className="px-4 py-3 flex flex-col gap-2" style={{ borderBottom: '1px solid #F5F0E8' }}>
           <input
-            type="url"
+            autoFocus
             value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-            placeholder="https://..."
-            className="w-full text-sm border border-black/10 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#1E6B5E]/30"
+            onChange={e => setUrl(e.target.value)}
+            placeholder="Paste URL (github.com, drive.google.com…)"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-teal-500/30"
+          />
+          <input
+            value={label}
+            onChange={e => setLabel(e.target.value)}
+            placeholder="Label (optional — auto-detected from URL)"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-teal-500/30"
           />
           <div className="flex gap-2">
-            <button
-              onClick={handleAdd}
-              disabled={adding || !label.trim() || !url.trim()}
-              className="text-xs font-medium px-3 py-1.5 rounded-lg bg-[#1E6B5E] text-white disabled:opacity-50"
-            >
-              {adding ? 'Saving...' : 'Save'}
+            <button type="button" onClick={() => { setShowForm(false); setUrl(''); setLabel('') }}
+              className="px-3 py-1.5 text-[12px] text-gray-400">Cancel</button>
+            <button type="submit" disabled={adding || !url.trim()}
+              className="flex-1 py-1.5 rounded-lg text-[13px] font-semibold text-white disabled:opacity-50"
+              style={{ background: '#1E6B5E' }}>
+              {adding ? 'Saving…' : 'Save link'}
             </button>
-            {!adding && (
-              <button
-                onClick={() => {
-                  setLabel('')
-                  setUrl('')
-                  setIcon('')
-                  setShowAddForm(false)
-                }}
-                className="text-xs font-medium px-3 py-1.5 rounded-lg bg-black/5 text-[#2C3E50]"
-              >
-                Cancel
-              </button>
-            )}
           </div>
-        </div>
+        </form>
       )}
 
-      {links.length === 0 && !showAddForm && (
-        <p className="text-sm text-[#8899a6] italic">No links yet.</p>
+      {links.length === 0 && !showForm && (
+        <p className="px-4 py-4 text-[13px] italic" style={{ color: '#9AA5AC' }}>No links yet. Add GitHub, Figma, Drive…</p>
       )}
 
-      <div className="grid grid-cols-2 gap-2">
-        {links.map((link) => (
+      <div className="grid grid-cols-2 gap-0">
+        {links.map((link, i) => (
           <div
             key={link.id}
-            className="group relative flex items-center gap-2 bg-white rounded-xl border border-black/[0.08] p-3 hover:border-[#1E6B5E]/20 transition-colors"
+            className="group flex items-center gap-2 px-4 py-3"
+            style={{ borderBottom: i < links.length - 1 ? '1px solid #F5F0E8' : 'none' }}
           >
-            <a
-              href={link.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 flex-1 min-w-0"
-            >
-              {link.icon && <span className="text-base">{link.icon}</span>}
-              <span className="text-sm text-[#2C3E50] font-medium truncate">
-                {link.label}
-              </span>
+            <a href={link.url} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-2 flex-1 min-w-0">
+              <span className="text-base shrink-0">{link.icon || '🔗'}</span>
+              <span className="text-[13px] font-medium truncate" style={{ color: '#1E2A35' }}>{link.label}</span>
             </a>
             {!link.is_auto && (
               <button
                 onClick={() => handleDelete(link.id)}
-                className="opacity-0 group-hover:opacity-100 text-[#8899a6] hover:text-red-500 text-xs transition-opacity"
-                aria-label={`Delete ${link.label}`}
+                disabled={deletingId === link.id}
+                className="opacity-0 group-hover:opacity-100 text-[11px] transition-opacity shrink-0"
+                style={{ color: '#9AA5AC' }}
               >
-                &times;
+                ✕
               </button>
             )}
           </div>

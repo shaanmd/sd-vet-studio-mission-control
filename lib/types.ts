@@ -1,7 +1,7 @@
 // lib/types.ts
 
 export type RevenueScore = 'low' | 'medium' | 'high'
-export type RevenueStream = 'course' | 'subscription' | 'inapp' | 'consulting' | 'sponsorship' | 'affiliate' | 'other'
+export type RevenueStream = 'course' | 'subscription' | 'inapp' | 'consulting' | 'website_builds' | 'sponsorship' | 'affiliate' | 'other'
 export type ProjectStage = 'inbox' | 'someday' | 'exploring' | 'building' | 'live' | 'maintenance' | 'archived'
 export type EnergyLevel = 'high' | 'medium' | 'low'
 export type InterestLevel = 'hot' | 'warm' | 'curious'
@@ -30,7 +30,7 @@ export interface Project {
   summary: string | null
   stage: ProjectStage
   revenue_score: RevenueScore
-  revenue_stream: RevenueStream | null
+  revenue_stream: RevenueStream[] | null
   revenue_per_conversion: number | null
   pinned: boolean
   github_repo: string | null
