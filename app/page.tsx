@@ -35,9 +35,8 @@ export default async function HomePage() {
     shaanProfile?.id === user.id ? 'Shaan' :
     'there'
 
-  const [debTasks, shaanTasks, pinnedProjects, revenueEntries, settingsRow] = await Promise.all([
-    debProfile ? getNextStepTasks(debProfile.id) : Promise.resolve([]),
-    shaanProfile ? getNextStepTasks(shaanProfile.id) : Promise.resolve([]),
+  const [nextTasks, pinnedProjects, revenueEntries, settingsRow] = await Promise.all([
+    getNextStepTasks(),
     getPinnedProjects(),
     getRevenueEntries(),
     supabase.from('settings').select('value').eq('key', 'financial_goal').single(),
@@ -87,8 +86,7 @@ export default async function HomePage() {
         {/* 2-col: money moves + focus projects */}
         <div className="grid gap-4" style={{ gridTemplateColumns: '1.3fr 1fr' }}>
           <YourNext3
-            debTasks={debTasks}
-            shaanTasks={shaanTasks}
+            tasks={nextTasks}
             profiles={allProfiles}
           />
           <FocusProjects projects={pinnedProjects} />
