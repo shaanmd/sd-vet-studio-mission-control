@@ -2,12 +2,14 @@ import { createClient } from '@/lib/supabase/server'
 import { getProjectsWithNextStep } from '@/lib/queries/projects'
 import { getRevenueEntries } from '@/lib/queries/revenue'
 import TopBar from '@/components/TopBar'
-import ProjectsTable from '@/components/projects/ProjectsTable'
-import ProjectCard from '@/components/projects/ProjectCard'
+import ProjectsViewClient from '@/components/projects/ProjectsViewClient'
 import ProjectsClientWrapper from '@/components/projects/ProjectsClientWrapper'
 import type { Profile } from '@/lib/types/database'
 
-const STAGE_ORDER = ['pinned', 'building', 'live', 'exploring', 'someday', 'inbox']
+const STAGE_ORDER = ['live', 'beta', 'building', 'exploring', 'someday', 'inbox', 'maintenance', 'archived']
+const STAGE_LABELS: Record<string, string> = {
+  live: 'live', beta: '🧪 beta', building: 'building', exploring: 'exploring', someday: 'someday', inbox: 'inbox', maintenance: 'maintenance', archived: '📦 archived',
+}
 
 export default async function ProjectsPage({
   searchParams,
@@ -38,26 +40,24 @@ export default async function ProjectsPage({
     }
   }
 
-  // Map profile id → Deb | Shaan
-  const profileNameById: Record<string, 'Deb' | 'Shaan'> = {}
-  for (const p of allProfiles) {
-    if (p.name === 'Deb' || p.name === 'Shaan') profileNameById[p.id] = p.name
-  }
-
-  // Owner = who is assigned to the next_step task
+  // Owner = who is assigned to the next_step task (assigned_to stores 'shaan'/'deb'/'both')
   const ownerByProject: Record<string, 'Deb' | 'Shaan' | null> = {}
   for (const p of projects) {
     const assignedTo = p.next_step?.assigned_to ?? null
-    ownerByProject[p.id] = assignedTo ? (profileNameById[assignedTo] ?? null) : null
+    if (assignedTo === 'shaan') ownerByProject[p.id] = 'Shaan'
+    else if (assignedTo === 'deb') ownerByProject[p.id] = 'Deb'
+    else ownerByProject[p.id] = null
   }
 
-  // Stage filter
+  // Stage filter — archived hidden from "all" by default, pinned is a boolean flag
   const filtered = activeStage === 'all'
-    ? projects
+    ? projects.filter((p) => p.stage !== 'archived')
+    : activeStage === 'pinned'
+    ? projects.filter((p) => p.pinned)
     : projects.filter((p) => p.stage === activeStage)
 
   // Stage counts
-  const counts: Record<string, number> = { all: projects.length }
+  const counts: Record<string, number> = { all: projects.filter(p => p.stage !== 'archived').length }
   for (const p of projects) {
     counts[p.stage] = (counts[p.stage] ?? 0) + 1
   }
@@ -72,9 +72,10 @@ export default async function ProjectsPage({
     return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
   })
 
-  const stageLabels = ['building', 'live', 'exploring', 'someday', 'inbox']
-    .filter((s) => counts[s])
-    .join(' · ')
+  // Active stages always show; others only if they have projects
+  const ALWAYS_SHOW = new Set(['live', 'beta', 'building'])
+  const activeStageLinks = ['live', 'beta', 'building', 'exploring', 'someday', 'inbox', 'archived']
+    .filter(s => ALWAYS_SHOW.has(s) || counts[s])
 
   return (
     <>
@@ -82,28 +83,6 @@ export default async function ProjectsPage({
         crumbs={['Projects']}
         right={
           <div className="flex items-center gap-2">
-            {/* Search */}
-            <div
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12.5px]"
-              style={{ background: '#fff', border: '1px solid #E8E2D6', color: '#9AA5AC', width: 240 }}
-            >
-              <span style={{ color: '#CDC3AE' }}>◎</span>
-              <span className="flex-1">Search or type ⌘K…</span>
-              <span
-                className="font-mono text-[10px] px-1.5 py-0.5 rounded"
-                style={{ background: '#F2ECE0', color: '#6B7A82' }}
-              >
-                ⌘K
-              </span>
-            </div>
-            {/* Filter */}
-            <button
-              className="px-3 py-1.5 rounded-lg text-[13px] font-semibold transition-colors"
-              style={{ border: '1px solid #D9D2C2', background: '#fff', color: '#2A3A48' }}
-            >
-              Filter
-            </button>
-            {/* New project */}
             <ProjectsClientWrapper />
           </div>
         }
@@ -125,9 +104,28 @@ export default async function ProjectsPage({
               Projects{' '}
               <span style={{ color: '#9AA5AC', fontWeight: 500 }}>· {projects.length}</span>
             </h1>
-            <p className="text-[12.5px] mt-1" style={{ color: '#6B7A82' }}>
-              📌 Pinned · {stageLabels}
-            </p>
+            <div className="flex items-center gap-1 flex-wrap mt-1 text-[12.5px]" style={{ color: '#6B7A82' }}>
+              <a
+                href={`/projects?stage=pinned${view !== 'table' ? `&view=${view}` : ''}`}
+                className="hover:underline"
+                style={{ color: activeStage === 'pinned' ? '#1E6B5E' : '#6B7A82', fontWeight: activeStage === 'pinned' ? 600 : 400 }}
+              >
+                📌 Pinned
+              </a>
+              {activeStageLinks.map(s => (
+                <span key={s} className="flex items-center gap-1">
+                  <span style={{ color: '#CDC3AE' }}>·</span>
+                  <a
+                    href={`/projects?stage=${s}${view !== 'table' ? `&view=${view}` : ''}`}
+                    className="hover:underline capitalize"
+                    style={{ color: activeStage === s ? '#1E6B5E' : '#6B7A82', fontWeight: activeStage === s ? 600 : 400 }}
+                  >
+                    {STAGE_LABELS[s] ?? s}
+                  </a>
+                  {counts[s] ? <span style={{ color: '#9AA5AC' }}>({counts[s]})</span> : null}
+                </span>
+              ))}
+            </div>
           </div>
 
           {/* Table / Grid / Board toggle */}
@@ -152,29 +150,13 @@ export default async function ProjectsPage({
           </div>
         </div>
 
-        {/* Content */}
-        {view === 'table' ? (
-          <ProjectsTable
-            projects={sorted}
-            revenueByProject={revenueByProject}
-            ownerByProject={ownerByProject}
-          />
-        ) : (
-          <div className="grid gap-3.5" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
-            {sorted.map((project) => (
-              <ProjectCard
-                key={project.id}
-                project={project}
-                nextStep={project.next_step ?? null}
-              />
-            ))}
-            {sorted.length === 0 && (
-              <p className="col-span-3 text-center py-8" style={{ color: '#9AA5AC' }}>
-                No projects in this stage.
-              </p>
-            )}
-          </div>
-        )}
+        <ProjectsViewClient
+          projects={sorted}
+          revenueByProject={revenueByProject}
+          ownerByProject={ownerByProject}
+          view={view as 'table' | 'grid'}
+          activeStage={activeStage}
+        />
       </div>
     </>
   )

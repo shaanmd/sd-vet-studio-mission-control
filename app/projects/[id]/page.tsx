@@ -1,26 +1,20 @@
 // app/projects/[id]/page.tsx
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { getProject, getProjectTasks, getProjectNotes, getProjectLinks, getProjectAnalysis } from '@/lib/queries/projects'
+import { getProject, getProjects, getProjectTasks, getProjectNotes, getProjectLinks, getProjectAnalysis } from '@/lib/queries/projects'
 import { getExpenses, getRevenueEntries } from '@/lib/queries/revenue'
 import { getExpenseSummary, getRevenueTotal } from '@/lib/finance'
 import TopBar from '@/components/TopBar'
 import NextStepBanner from '@/components/project-detail/NextStepBanner'
 import AIAnalysisPanel from '@/components/project-detail/AIAnalysisPanel'
-import ProjectEditButton from '@/components/project-detail/ProjectEditButton'
+import ProjectInlineEditor from '@/components/project-detail/ProjectInlineEditor'
 import TaskList from '@/components/project-detail/TaskList'
 import KeyLinks from '@/components/project-detail/KeyLinks'
 import NotesList from '@/components/project-detail/NotesList'
+import ProjectOverviewCard from '@/components/project-detail/ProjectOverviewCard'
+import ProjectMeetingsList from '@/components/project-detail/ProjectMeetingsList'
+import type { Meeting } from '@/components/meetings/MeetingsClient'
 
-const STAGE_STYLES: Record<string, { bg: string; color: string; label: string }> = {
-  building:  { bg: '#E8F4F0', color: '#1E6B5E', label: 'Building' },
-  live:      { bg: '#D1FAE5', color: '#065F46', label: 'Live' },
-  exploring: { bg: '#EDE9FE', color: '#5B21B6', label: 'Exploring' },
-  someday:   { bg: '#F3F4F6', color: '#6B7280', label: 'Someday' },
-  inbox:     { bg: '#FEF3C7', color: '#92400E', label: 'Inbox' },
-  pinned:    { bg: '#FEF3C7', color: '#92400E', label: 'Pinned' },
-}
 
 export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -28,7 +22,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
-  const [project, tasks, notes, links, analysis, projectExpenses, projectRevenue] = await Promise.all([
+  const [project, tasks, notes, links, analysis, projectExpenses, projectRevenue, allProjects, meetingsData] = await Promise.all([
     getProject(id).catch(() => null),
     getProjectTasks(id),
     getProjectNotes(id),
@@ -36,7 +30,11 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     getProjectAnalysis(id),
     getExpenses(id),
     getRevenueEntries(id),
+    getProjects(),
+    supabase.from('meetings').select('*, project:projects(id, name, emoji)').eq('linked_project_id', id).order('scheduled_at', { ascending: false }),
   ])
+
+  const projectMeetings = (meetingsData.data ?? []) as Meeting[]
 
   if (!project) notFound()
 
@@ -44,8 +42,6 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const expenseSummary = getExpenseSummary(projectExpenses)
   const revenueTotal = getRevenueTotal(projectRevenue)
   const pnl = revenueTotal - expenseSummary.total
-  const stageStyle = STAGE_STYLES[project.stage] ?? STAGE_STYLES.inbox
-
   async function handleSaveAnalysis(data: { income_potential: string; build_difficulty: string; recommendation: string; raw_output: string }) {
     'use server'
     const supabase = await createClient()
@@ -58,64 +54,16 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
   return (
     <>
-      <TopBar
-        crumbs={['Projects', project.name]}
-        right={
-          <div className="flex items-center gap-2">
-            <ProjectEditButton project={project} />
-            <button
-              className="w-8 h-8 flex items-center justify-center rounded-lg text-[18px] transition-colors hover:bg-black/5"
-              style={{ color: '#6B7A82' }}
-              title="More options"
-            >
-              ⋯
-            </button>
-          </div>
-        }
-      />
+      <TopBar crumbs={['Projects', project.name]} />
 
       <div style={{ padding: '22px 28px', paddingBottom: 40 }}>
-        {/* Project header */}
-        <div className="flex items-start gap-4 mb-4">
-          <span style={{ fontSize: 48, lineHeight: 1 }}>{project.emoji}</span>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap mb-1">
-              <h1
-                className="font-bold leading-tight"
-                style={{ fontFamily: 'Georgia, serif', fontSize: 26, color: '#1E2A35', letterSpacing: -0.5 }}
-              >
-                {project.name}
-              </h1>
-              <span
-                className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full"
-                style={{ background: stageStyle.bg, color: stageStyle.color }}
-              >
-                {stageStyle.label}
-              </span>
-              {project.pinned && <span title="Pinned">📌</span>}
-            </div>
-            {project.summary && (
-              <p className="text-[13px] mb-2" style={{ color: '#6B7A82' }}>{project.summary}</p>
-            )}
-            {/* Inline P&L stats */}
-            <div className="flex items-center gap-4">
-              <div className="text-[12px]">
-                <span style={{ color: '#9AA5AC' }}>Revenue </span>
-                <span className="font-bold" style={{ color: '#1E6B5E' }}>${revenueTotal.toFixed(0)}</span>
-              </div>
-              <div className="text-[12px]">
-                <span style={{ color: '#9AA5AC' }}>Expenses </span>
-                <span className="font-bold" style={{ color: '#C0392B' }}>${expenseSummary.total.toFixed(0)}</span>
-              </div>
-              <div className="text-[12px]">
-                <span style={{ color: '#9AA5AC' }}>P&L </span>
-                <span className="font-bold" style={{ color: pnl >= 0 ? '#1E6B5E' : '#C0392B' }}>
-                  {pnl >= 0 ? '+' : ''}${pnl.toFixed(0)}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Inline editable header */}
+        <ProjectInlineEditor
+          project={project}
+          revenueTotal={revenueTotal}
+          expenseTotal={expenseSummary.total}
+          pnl={pnl}
+        />
 
         {/* Next Step banner */}
         <div className="mb-5">
@@ -124,14 +72,15 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
         {/* Two-pane body */}
         <div className="grid gap-5" style={{ gridTemplateColumns: '1.2fr 1fr', alignItems: 'start' }}>
-          {/* Left pane: Tasks + Notes */}
+          {/* Left pane: Tasks + Notes + AI Analysis */}
           <div className="flex flex-col gap-4">
-            <TaskList projectId={id} tasks={tasks} />
+            <TaskList
+              projectId={id}
+              tasks={tasks}
+              allProjects={allProjects.map(p => ({ id: p.id, name: p.name, emoji: p.emoji }))}
+            />
             <NotesList projectId={id} notes={notes as any} />
-          </div>
-
-          {/* Right pane: AI Analysis + Key Links */}
-          <div className="flex flex-col gap-4">
+            <ProjectMeetingsList projectId={id} projectName={project.name} meetings={projectMeetings} />
             <AIAnalysisPanel
               projectId={id}
               projectName={project.name}
@@ -142,6 +91,11 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
               analysis={analysis}
               onSave={handleSaveAnalysis}
             />
+          </div>
+
+          {/* Right pane: Overview + Key Links */}
+          <div className="flex flex-col gap-4">
+            <ProjectOverviewCard project={project} />
             <KeyLinks projectId={id} links={links} />
           </div>
         </div>

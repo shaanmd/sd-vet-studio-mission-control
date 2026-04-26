@@ -7,6 +7,7 @@ export type Stage =
   | 'someday'
   | 'exploring'
   | 'building'
+  | 'beta'
   | 'live'
   | 'maintenance'
   | 'archived'
@@ -47,6 +48,7 @@ export type RevenueStream =
   | 'subscription'
   | 'inapp'
   | 'consulting'
+  | 'website_builds'
   | 'sponsorship'
   | 'affiliate'
   | 'other'
@@ -86,25 +88,35 @@ export interface Project {
   stage: Stage
   pinned: boolean
   revenue_score: RevenueScore
-  revenue_stream: RevenueStream | null
+  revenue_stream: RevenueStream[] | null
   revenue_per_conversion: number | null
   github_repo: string | null
   vercel_project_id: string | null
   live_url: string | null
+  owner: 'shaan' | 'deb' | 'both' | null
+  goals: string | null
+  tech_stack: string | null
+  target_audience: string | null
   created_by: string | null
   updated_by: string | null
   created_at: string
   updated_at: string
 }
 
+export type Recurrence = 'daily' | 'weekly' | 'monthly'
+
 export interface Task {
   id: string
   project_id: string
   title: string
+  description: string | null
   assigned_to: string | null
   is_shared: boolean
   is_next_step: boolean
   energy: Energy | null
+  due_date: string | null
+  recurrence: Recurrence | null
+  recurrence_next_due: string | null
   completed: boolean
   completed_at: string | null
   completed_by: string | null

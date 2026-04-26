@@ -179,6 +179,7 @@ export async function getProjectNotes(projectId: string) {
     .from('project_notes')
     .select('*, author:profiles(name)')
     .eq('project_id', projectId)
+    .neq('note_type', 'task_complete')
     .order('created_at', { ascending: false })
   if (error) throw error
   return data as (import('@/lib/types/database').ProjectNote & { author: { name: string } | null })[]

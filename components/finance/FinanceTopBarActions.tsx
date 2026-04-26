@@ -1,5 +1,6 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import LogExpenseForm from './LogExpenseForm'
 import LogRevenueForm from './LogRevenueForm'
 
@@ -10,6 +11,9 @@ interface Props {
 export default function FinanceTopBarActions({ projects }: Props) {
   const [showExpense, setShowExpense] = useState(false)
   const [showRevenue, setShowRevenue] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => { setMounted(true) }, [])
 
   return (
     <>
@@ -27,8 +31,14 @@ export default function FinanceTopBarActions({ projects }: Props) {
       >
         + Log revenue
       </button>
-      {showExpense && <LogExpenseForm projects={projects} onClose={() => setShowExpense(false)} />}
-      {showRevenue && <LogRevenueForm projects={projects} onClose={() => setShowRevenue(false)} />}
+      {mounted && showExpense && createPortal(
+        <LogExpenseForm projects={projects} onClose={() => setShowExpense(false)} />,
+        document.body
+      )}
+      {mounted && showRevenue && createPortal(
+        <LogRevenueForm projects={projects} onClose={() => setShowRevenue(false)} />,
+        document.body
+      )}
     </>
   )
 }

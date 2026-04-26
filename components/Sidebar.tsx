@@ -9,9 +9,10 @@ const NAV_ITEMS = [
   { href: '/finance',   label: 'Finance',    shortcut: '⌘3' },
   { href: '/leads',     label: 'Leads',      shortcut: '⌘4' },
   { href: '/log',       label: 'Log & Wins', shortcut: '⌘5' },
-  { href: '/marketing', label: 'Marketing',  shortcut: '⌘6' },
-  { href: '/resources', label: 'Resources',  shortcut: '⌘7' },
-  { href: '/settings',  label: 'Settings',   shortcut: '⌘8' },
+  { href: '/meetings',  label: 'Meetings',   shortcut: '⌘6' },
+  { href: '/marketing', label: 'Marketing',  shortcut: '⌘7' },
+  { href: '/resources', label: 'Resources',  shortcut: '⌘8' },
+  { href: '/settings',  label: 'Settings',   shortcut: '⌘9' },
 ]
 
 export default function Sidebar() {

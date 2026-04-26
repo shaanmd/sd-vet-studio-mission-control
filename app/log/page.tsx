@@ -1,4 +1,3 @@
-// app/log/page.tsx
 import { createClient } from '@/lib/supabase/server'
 import TopBar from '@/components/TopBar'
 import LogWinsClient from '@/components/log/LogWinsClient'
@@ -6,22 +5,25 @@ import LogWinsClient from '@/components/log/LogWinsClient'
 export default async function LogPage() {
   const supabase = await createClient()
 
-  const [activitiesRes, winsRes] = await Promise.all([
+  const [activitiesRes, winsRes, projectsRes] = await Promise.all([
     supabase
       .from('activity_log')
       .select('*, project:projects(name, emoji), actor:profiles(name)')
       .order('created_at', { ascending: false })
       .limit(100),
     supabase
-      .from('activity_log')
-      .select('*, project:projects(name, emoji), actor:profiles(name)')
-      .in('action', ['task_completed', 'revenue_logged', 'stage_changed'])
-      .order('created_at', { ascending: false })
-      .limit(50),
+      .from('wins')
+      .select('*, project:projects(id, name, emoji)')
+      .order('happened_at', { ascending: false }),
+    supabase
+      .from('projects')
+      .select('id, name, emoji')
+      .order('name'),
   ])
 
   const activities = activitiesRes.data ?? []
   const wins = winsRes.data ?? []
+  const projects = projectsRes.data ?? []
 
   return (
     <>
@@ -38,7 +40,7 @@ export default async function LogPage() {
             {wins.length} wins · {activities.length} activity entries
           </p>
         </div>
-        <LogWinsClient activities={activities as any} wins={wins as any} />
+        <LogWinsClient activities={activities as any} wins={wins as any} projects={projects} />
       </div>
     </>
   )

@@ -11,10 +11,12 @@ interface CreateProjectModalProps {
 }
 
 const stageOptions: { stage: Stage; label: string; icon: string }[] = [
-  { stage: 'inbox', label: 'Inbox', icon: '\uD83D\uDCE5' },
-  { stage: 'someday', label: 'Someday', icon: '\uD83D\uDCA4' },
-  { stage: 'exploring', label: 'Exploring', icon: '\uD83D\uDD0D' },
-  { stage: 'building', label: 'Building', icon: '\uD83D\uDD28' },
+  { stage: 'inbox', label: 'Inbox', icon: '📥' },
+  { stage: 'someday', label: 'Someday', icon: '💤' },
+  { stage: 'exploring', label: 'Exploring', icon: '🔍' },
+  { stage: 'building', label: 'Building', icon: '🔨' },
+  { stage: 'beta', label: 'Beta', icon: '🧪' },
+  { stage: 'live', label: 'Live', icon: '🟢' },
 ]
 
 export default function CreateProjectModal({ onClose }: CreateProjectModalProps) {
@@ -48,12 +50,11 @@ export default function CreateProjectModal({ onClose }: CreateProjectModalProps)
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+    <div className="fixed inset-0 z-50 bg-black/50 overflow-y-auto">
+      <div className="flex min-h-full items-center justify-center p-4" onClick={onClose}>
 
       {/* Modal */}
-      <div className="relative bg-white rounded-2xl w-full max-w-md p-6 max-h-[92vh] overflow-y-auto">
+      <div className="relative bg-white rounded-2xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-sm font-semibold text-[#2C3E50]">New Project</h3>
           <button
@@ -133,6 +134,7 @@ export default function CreateProjectModal({ onClose }: CreateProjectModalProps)
             {submitting ? 'Creating...' : 'Create Project'}
           </button>
         </form>
+      </div>
       </div>
     </div>
   )

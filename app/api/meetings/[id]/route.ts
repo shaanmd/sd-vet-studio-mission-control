@@ -6,11 +6,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const body = await req.json()
   const { error } = await supabase
-    .from('projects')
-    .update({ ...body, updated_by: user.id })
+    .from('meetings')
+    .update({ ...body, updated_at: new Date().toISOString() })
     .eq('id', id)
+
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true })
 }
@@ -21,14 +23,7 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  // Cascade delete related records before deleting project
-  await supabase.from('tasks').delete().eq('project_id', id)
-  await supabase.from('project_notes').delete().eq('project_id', id)
-  await supabase.from('project_links').delete().eq('project_id', id)
-  await supabase.from('leads').delete().eq('project_id', id)
-  await supabase.from('activity_log').delete().eq('project_id', id)
-
-  const { error } = await supabase.from('projects').delete().eq('id', id)
+  const { error } = await supabase.from('meetings').delete().eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true })
 }
