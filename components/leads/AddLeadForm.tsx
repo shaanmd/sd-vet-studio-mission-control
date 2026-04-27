@@ -1,7 +1,8 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import type { InterestLevel } from '@/lib/types/database'
+import type { InterestLevel, SourceChannel, BroughtInBy } from '@/lib/types/database'
+import { SOURCE_CHANNELS, BROUGHT_IN_BY } from './sourceConstants'
 
 interface Props {
   projects: Array<{ id: string; name: string; emoji: string }>
@@ -19,6 +20,8 @@ export default function AddLeadForm({ projects: initialProjects, defaultProjectI
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [source, setSource] = useState('')
+  const [sourceChannel, setSourceChannel] = useState<SourceChannel | null>(null)
+  const [broughtInBy, setBroughtInBy] = useState<BroughtInBy | null>(null)
   const [interestLevel, setInterestLevel] = useState<InterestLevel>('warm')
   const [projectId, setProjectId] = useState(defaultProjectId ?? '')
   const [notes, setNotes] = useState('')
@@ -81,6 +84,8 @@ export default function AddLeadForm({ projects: initialProjects, defaultProjectI
         contact_email: email || null,
         contact_phone: phone || null,
         source: source || null,
+        source_channel: sourceChannel,
+        brought_in_by: broughtInBy,
         interest_level: interestLevel,
         project_id: projectId,
         notes: notes.trim() || null,
@@ -109,7 +114,47 @@ export default function AddLeadForm({ projects: initialProjects, defaultProjectI
             <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" type="email" className={`flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none`} />
             <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="Phone" className={`flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none`} />
           </div>
-          <input value={source} onChange={e => setSource(e.target.value)} placeholder="How they heard about it" className={inputCls} />
+          {/* Source channel */}
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">Came in via</label>
+            <div className="flex gap-1.5 flex-wrap">
+              {SOURCE_CHANNELS.map(c => (
+                <button
+                  key={c.value}
+                  type="button"
+                  onClick={() => setSourceChannel(prev => prev === c.value ? null : c.value)}
+                  className="px-2.5 py-1.5 rounded-lg text-[12px] font-semibold border transition-colors"
+                  style={sourceChannel === c.value
+                    ? { background: '#E8F4F0', color: '#1E6B5E', borderColor: '#1E6B5E' }
+                    : { borderColor: '#E8E2D6', color: '#6B7280' }}
+                >
+                  {c.emoji} {c.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Brought in by */}
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">Brought in by</label>
+            <div className="flex gap-1.5">
+              {BROUGHT_IN_BY.map(b => (
+                <button
+                  key={b.value}
+                  type="button"
+                  onClick={() => setBroughtInBy(prev => prev === b.value ? null : b.value)}
+                  className="flex-1 py-1.5 rounded-lg text-[12px] font-semibold border transition-colors"
+                  style={broughtInBy === b.value
+                    ? { background: '#E8F4F0', color: '#1E6B5E', borderColor: '#1E6B5E' }
+                    : { borderColor: '#E8E2D6', color: '#6B7280' }}
+                >
+                  {b.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <input value={source} onChange={e => setSource(e.target.value)} placeholder="Source specifics (e.g. AVA conference, LinkedIn post)" className={inputCls} />
 
           {/* Interest level */}
           <div className="flex gap-2">

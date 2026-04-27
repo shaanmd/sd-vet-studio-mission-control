@@ -22,6 +22,10 @@ export type BetaFeedbackStatus = 'awaiting' | 'received' | 'follow_up'
 
 export type LeadStatus = 'active' | 'contacted' | 'trialing' | 'converted' | 'archived'
 
+export type SourceChannel = 'linkedin' | 'email' | 'phone' | 'personal' | 'website' | 'referral' | 'event' | 'other'
+
+export type BroughtInBy = 'shaan' | 'deb' | 'other'
+
 export type NoteType = 'note' | 'stage_change' | 'deploy' | 'task_complete'
 
 export type DeployStatus = 'ready' | 'building' | 'error'
@@ -225,6 +229,8 @@ export interface Lead {
   contact_email: string | null
   contact_phone: string | null
   source: string | null
+  source_channel: SourceChannel | null
+  brought_in_by: BroughtInBy | null
   interest_level: InterestLevel
   is_beta_tester: boolean
   beta_invited_at: string | null

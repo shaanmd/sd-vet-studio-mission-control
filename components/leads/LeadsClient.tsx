@@ -3,6 +3,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import AddLeadForm from './AddLeadForm'
 import EditLeadModal from './EditLeadModal'
+import { channelMeta, broughtInByLabel } from './sourceConstants'
+import type { SourceChannel, BroughtInBy } from '@/lib/types/database'
 
 const INTEREST_STYLE: Record<string, { bg: string; color: string }> = {
   hot:     { bg: '#FDECEA', color: '#C0392B' },
@@ -17,6 +19,8 @@ interface Lead {
   role_clinic?: string | null
   interest_level: string
   source?: string | null
+  source_channel?: SourceChannel | null
+  brought_in_by?: BroughtInBy | null
   contact_email?: string | null
   is_beta_tester?: boolean
   project: { name: string; emoji: string }
@@ -130,6 +134,11 @@ export default function LeadsClient({ leads, projects }: Props) {
                 )}
                 <div className="flex items-center gap-2 flex-wrap mt-1 text-[11px]" style={{ color: '#9AA5AC' }}>
                   <span>{lead.project.emoji} {lead.project.name}</span>
+                  {(() => {
+                    const ch = channelMeta(lead.source_channel ?? null)
+                    return ch ? <><span>·</span><span>{ch.emoji} {ch.label}</span></> : null
+                  })()}
+                  {lead.brought_in_by && <><span>·</span><span>via {broughtInByLabel(lead.brought_in_by)}</span></>}
                   {lead.source && <><span>·</span><span>{lead.source}</span></>}
                   {lead.contact_email && <><span>·</span><span>{lead.contact_email}</span></>}
                 </div>
