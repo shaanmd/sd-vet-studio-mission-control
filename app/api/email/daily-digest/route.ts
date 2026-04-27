@@ -161,11 +161,11 @@ export async function GET(req: Request) {
   const results: Array<{ name: string; email: string; status: string }> = []
 
   for (const recipient of RECIPIENTS) {
-    // Tasks assigned to this person (stored as 'shaan'/'deb' strings)
+    // Tasks assigned to this person (or to 'both')
     const { data: taskData } = await supabase
       .from('tasks')
       .select('title, energy, due_date, project:projects(name, emoji)')
-      .eq('assigned_to', recipient.assignedTo)
+      .in('assigned_to', [recipient.assignedTo, 'both'])
       .eq('is_next_step', true)
       .eq('completed', false)
       .limit(3)
