@@ -198,7 +198,7 @@ export async function GET(req: Request) {
 
     try {
       await resend.emails.send({
-        from: 'Mission Control <noreply@vetalign.com.au>',
+        from: process.env.DAILY_DIGEST_FROM ?? 'Mission Control <noreply@sdvetstudio.com>',
         to: recipient.email,
         subject: `Mission Control · ${new Date().toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })} 🎯`,
         html: buildEmailHtml(recipient.name, tasks, projectRows, allWins as WinRow[]),

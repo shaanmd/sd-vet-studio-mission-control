@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import TopBar from '@/components/TopBar'
+import TestDigestButton from './TestDigestButton'
 
 const INTEGRATIONS = [
   { name: 'GitHub', icon: '🐙', desc: 'Repo sync & commit tracking', status: 'coming' },
@@ -128,6 +129,20 @@ export default async function SettingsPage() {
                 </span>
               </div>
             ))}
+          </div>
+        </section>
+
+        {/* Daily digest */}
+        <section className="mb-6">
+          <h2 className="text-[11px] font-bold uppercase tracking-[2px] mb-3" style={{ color: '#9AA5AC' }}>Daily digest</h2>
+          <div className="rounded-xl p-5" style={{ background: '#fff', border: '1px solid #E8E2D6' }}>
+            <p className="text-[13px] mb-1" style={{ color: '#1E2A35' }}>
+              Sent at 7am AEST every day to <strong>Shaan</strong> and <strong>Deb</strong>.
+            </p>
+            <p className="text-[12px] mb-4" style={{ color: '#9AA5AC' }}>
+              Top 3 next-step tasks · Active projects · Recent wins · From <code style={{ background: '#F5F0E8', padding: '1px 5px', borderRadius: 4 }}>noreply@sdvetstudio.com</code>
+            </p>
+            <TestDigestButton />
           </div>
         </section>
 
