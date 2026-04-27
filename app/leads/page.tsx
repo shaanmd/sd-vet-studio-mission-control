@@ -6,7 +6,7 @@ import LeadsClient from '@/components/leads/LeadsClient'
 export default async function LeadsPage() {
   const supabase = await createClient()
 
-  const [leadsRes, projectsRes] = await Promise.all([
+  const [leadsRes, projectsRes, convertedRes] = await Promise.all([
     supabase
       .from('leads')
       .select('*, project:projects(name, emoji), added_by_profile:profiles!leads_added_by_fkey(name)')
@@ -15,9 +15,22 @@ export default async function LeadsPage() {
       .from('projects')
       .select('id, name, emoji')
       .order('name'),
+    supabase
+      .from('contacts')
+      .select('id, lead_id')
+      .not('lead_id', 'is', null),
   ])
 
-  const leads = leadsRes.data ?? []
+  // Map lead_id → contact_id so we can show "→ Contact" on already-converted leads
+  const convertedMap: Record<string, string> = {}
+  for (const c of convertedRes.data ?? []) {
+    if (c.lead_id) convertedMap[c.lead_id] = c.id
+  }
+
+  const leads = (leadsRes.data ?? []).map((l: any) => ({
+    ...l,
+    converted_contact_id: convertedMap[l.id] ?? null,
+  }))
   const projects = (projectsRes.data ?? []).map((p: any) => ({ id: p.id, name: p.name, emoji: p.emoji ?? '' }))
 
   return (

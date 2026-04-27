@@ -21,6 +21,7 @@ interface Lead {
   is_beta_tester?: boolean
   project: { name: string; emoji: string }
   added_by_profile?: { name: string } | null
+  converted_contact_id?: string | null
 }
 
 interface Props {
@@ -111,6 +112,17 @@ export default function LeadsClient({ leads, projects }: Props) {
                     <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: '#E8F4F0', color: '#1E6B5E' }}>
                       Beta tester
                     </span>
+                  )}
+                  {lead.converted_contact_id && (
+                    <a
+                      href={`/crm/${lead.converted_contact_id}`}
+                      onClick={e => e.stopPropagation()}
+                      className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                      style={{ background: '#E8F4F0', color: '#1E6B5E', textDecoration: 'none' }}
+                      title="View contact"
+                    >
+                      👥 Contact →
+                    </a>
                   )}
                 </div>
                 {lead.role_clinic && (

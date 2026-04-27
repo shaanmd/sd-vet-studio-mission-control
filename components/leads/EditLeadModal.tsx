@@ -14,6 +14,7 @@ interface Lead {
   project_id: string
   is_beta_tester?: boolean
   status?: string | null
+  converted_contact_id?: string | null
 }
 
 interface Props {
@@ -43,6 +44,8 @@ export default function EditLeadModal({ lead, projects, onClose }: Props) {
   const [status, setStatus] = useState(lead.status ?? 'active')
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [converting, setConverting] = useState(false)
+  const [convertedContactId, setConvertedContactId] = useState<string | null>(lead.converted_contact_id ?? null)
   const [error, setError] = useState('')
 
   async function handleSave(e: React.FormEvent) {
@@ -68,6 +71,23 @@ export default function EditLeadModal({ lead, projects, onClose }: Props) {
     if (!res.ok) { setError('Failed to save'); setSaving(false); return }
     router.refresh()
     onClose()
+  }
+
+  async function handleConvert() {
+    if (!confirm(`Convert "${lead.name}" to a Contact?\n\nThis creates a contact in the CRM and links it to the lead's project. The lead itself stays put.`)) return
+    setConverting(true)
+    setError('')
+    const res = await fetch(`/api/leads/${lead.id}/convert`, { method: 'POST' })
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}))
+      setError(j.error ?? 'Failed to convert')
+      setConverting(false)
+      return
+    }
+    const { contact } = await res.json()
+    setConvertedContactId(contact.id)
+    setConverting(false)
+    router.refresh()
   }
 
   async function handleDelete() {
@@ -152,6 +172,27 @@ export default function EditLeadModal({ lead, projects, onClose }: Props) {
               {saving ? 'Saving…' : 'Save'}
             </button>
           </div>
+
+          {/* Convert to Contact */}
+          {convertedContactId ? (
+            <a
+              href={`/crm/${convertedContactId}`}
+              className="w-full text-center text-sm font-semibold py-2 rounded-lg"
+              style={{ background: '#E8F4F0', color: '#1E6B5E' }}
+            >
+              ✓ Converted — view contact →
+            </a>
+          ) : (
+            <button
+              type="button"
+              onClick={handleConvert}
+              disabled={converting}
+              className="w-full text-center text-sm font-semibold py-2 rounded-lg disabled:opacity-50"
+              style={{ background: '#F5F0E8', color: '#1E6B5E', border: '1px solid #1E6B5E' }}
+            >
+              {converting ? 'Converting…' : '👥 Convert to Contact'}
+            </button>
+          )}
 
           <button
             type="button"
