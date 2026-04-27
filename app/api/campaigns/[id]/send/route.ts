@@ -29,6 +29,20 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   if (!campaign.subject?.trim())     return NextResponse.json({ error: 'Subject is required' }, { status: 400 })
   if (!campaign.body_markdown?.trim()) return NextResponse.json({ error: 'Body is empty' }, { status: 400 })
 
+  // Fetch the list's identity (from-email + brand colors). Falls back to
+  // global defaults if the list isn't yet configured.
+  const { data: listConfig } = await supabase
+    .from('newsletter_lists')
+    .select('from_email, from_name, brand_primary, brand_accent')
+    .eq('name', campaign.list_name)
+    .maybeSingle()
+
+  const fromName = listConfig?.from_name ?? 'Mission Control'
+  const fromEmail = listConfig?.from_email ?? 'noreply@sdvetstudio.com'
+  const fromHeader = `${fromName} <${fromEmail}>`
+  const brandPrimary = listConfig?.brand_primary ?? '#1E6B5E'
+  const brandAccent  = listConfig?.brand_accent  ?? '#D4A853'
+
   // Pull active subscribers for this list, joined to contacts for name + email
   const { data: subs, error: subsErr } = await supabase
     .from('newsletter_subscriptions')
@@ -69,6 +83,10 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
       subject: campaign.subject,
       bodyMarkdown: campaign.body_markdown,
       previewText: campaign.preview_text,
+      from: fromHeader,
+      fromName,
+      brandPrimary,
+      brandAccent,
     })
 
     if (outcome.ok) {

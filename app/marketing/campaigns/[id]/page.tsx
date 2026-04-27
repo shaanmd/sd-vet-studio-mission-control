@@ -2,7 +2,7 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import TopBar from '@/components/TopBar'
-import type { Campaign } from '@/lib/types/database'
+import type { Campaign, NewsletterList } from '@/lib/types/database'
 import CampaignComposer from '@/components/marketing/CampaignComposer'
 
 interface PageProps {
@@ -30,6 +30,20 @@ export default async function CampaignComposerPage({ params }: PageProps) {
     .eq('list_name', campaign.list_name)
     .is('unsubscribed_at', null)
 
+  // List branding config (from-email + brand colors)
+  const { data: listConfigData } = await supabase
+    .from('newsletter_lists')
+    .select('*, project:projects(id, name, emoji)')
+    .eq('name', campaign.list_name)
+    .maybeSingle()
+  const listConfig = listConfigData as (NewsletterList & { project?: { id: string; name: string; emoji: string | null } | null }) | null
+
+  const projectsRes = await supabase
+    .from('projects')
+    .select('id, name, emoji')
+    .order('name')
+  const projects = (projectsRes.data ?? []).map((p: any) => ({ id: p.id, name: p.name, emoji: p.emoji ?? null }))
+
   // Recent sends for stats line
   let perRecipientStats: { sent: number; failed: number } | null = null
   if (campaign.status === 'sent' || campaign.status === 'failed' || campaign.status === 'sending') {
@@ -55,6 +69,8 @@ export default async function CampaignComposerPage({ params }: PageProps) {
           activeSubscriberCount={activeCount ?? 0}
           perRecipientStats={perRecipientStats}
           userEmail={user.email ?? ''}
+          listConfig={listConfig}
+          projects={projects}
         />
       </div>
     </>

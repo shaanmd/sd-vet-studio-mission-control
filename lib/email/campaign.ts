@@ -8,9 +8,14 @@ import { marked } from 'marked'
 interface RenderOpts {
   recipientName?: string | null
   unsubscribeUrl?: string
+  fromName?: string
+  brandPrimary?: string
+  brandAccent?: string
 }
 
 const FROM_DEFAULT = 'Mission Control <noreply@sdvetstudio.com>'
+const BRAND_PRIMARY_DEFAULT = '#1E6B5E'
+const BRAND_ACCENT_DEFAULT  = '#D4A853'
 
 /** Replaces {{first_name}} / {{name}} merge tokens with the recipient's name. */
 function applyMergeTokens(markdown: string, name: string | null | undefined): string {
@@ -30,6 +35,10 @@ export function renderCampaignHtml(
   const merged = applyMergeTokens(bodyMarkdown, opts.recipientName)
   const innerHtml = marked.parse(merged, { async: false }) as string
 
+  const primary = opts.brandPrimary ?? BRAND_PRIMARY_DEFAULT
+  const accent  = opts.brandAccent  ?? BRAND_ACCENT_DEFAULT
+  const fromName = opts.fromName ?? 'SD VetStudio'
+
   const unsubscribeBlock = opts.unsubscribeUrl
     ? `<p style="font-size:11px;color:#9AA5AC;margin:8px 0 0;">
          Don't want these? <a href="${opts.unsubscribeUrl}" style="color:#9AA5AC;text-decoration:underline;">Unsubscribe</a>
@@ -41,16 +50,17 @@ export function renderCampaignHtml(
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(subject)}</title></head>
 <body style="margin:0;padding:0;background:#F5F0E8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#0D2035;">
   <div style="max-width:580px;margin:32px auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #E8E2D6;">
+    <div style="height:6px;background:${primary};"></div>
     <div style="padding:28px 32px;font-size:15px;line-height:1.65;">
       <style>
         .mc-content h1 { font-size:22px; font-weight:700; color:#0D2035; margin:24px 0 12px; }
         .mc-content h2 { font-size:18px; font-weight:700; color:#0D2035; margin:20px 0 10px; }
         .mc-content h3 { font-size:16px; font-weight:600; color:#0D2035; margin:16px 0 8px; }
         .mc-content p  { margin:0 0 14px; }
-        .mc-content a  { color:#1E6B5E; text-decoration:underline; }
+        .mc-content a  { color:${primary}; text-decoration:underline; }
         .mc-content ul, .mc-content ol { margin:0 0 14px; padding-left:22px; }
         .mc-content li { margin:4px 0; }
-        .mc-content blockquote { border-left:3px solid #D4A853; margin:12px 0; padding:4px 14px; color:#6B7A82; font-style:italic; }
+        .mc-content blockquote { border-left:3px solid ${accent}; margin:12px 0; padding:4px 14px; color:#6B7A82; font-style:italic; }
         .mc-content code { background:#F5F0E8; padding:2px 6px; border-radius:4px; font-size:13px; }
         .mc-content pre { background:#F5F0E8; padding:12px 14px; border-radius:8px; overflow-x:auto; }
         .mc-content hr { border:none; border-top:1px solid #E8E2D6; margin:20px 0; }
@@ -58,7 +68,7 @@ export function renderCampaignHtml(
       <div class="mc-content">${innerHtml}</div>
     </div>
     <div style="padding:16px 32px;border-top:1px solid #F5F0E8;background:#FBF7EF;">
-      <p style="font-size:11px;color:#9AA5AC;margin:0;">SD VetStudio · sent with Mission Control</p>
+      <p style="font-size:11px;color:#9AA5AC;margin:0;">${escapeHtml(fromName)} · sent with Mission Control</p>
       ${unsubscribeBlock}
     </div>
   </div>
@@ -81,6 +91,9 @@ export interface CampaignSendInput {
   /** Optional one-click unsubscribe link surfaced in the footer. */
   unsubscribeUrl?: string
   from?: string
+  fromName?: string
+  brandPrimary?: string
+  brandAccent?: string
 }
 
 export interface CampaignSendOutcome {
@@ -99,6 +112,9 @@ export async function sendCampaignEmail(input: CampaignSendInput): Promise<Campa
   const html = renderCampaignHtml(input.bodyMarkdown, input.subject, {
     recipientName: input.recipientName,
     unsubscribeUrl: input.unsubscribeUrl,
+    fromName: input.fromName,
+    brandPrimary: input.brandPrimary,
+    brandAccent: input.brandAccent,
   })
 
   try {

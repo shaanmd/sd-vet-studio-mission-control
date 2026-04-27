@@ -5,6 +5,7 @@ import ToolLinksGrid from '@/components/marketing/ToolLinksGrid'
 import ContentCalendar from '@/components/marketing/ContentCalendar'
 import MediaSection from '@/components/marketing/MediaSection'
 import CampaignsSection from '@/components/marketing/CampaignsSection'
+import NewsletterListsSection from '@/components/marketing/NewsletterListsSection'
 
 export default async function MarketingPage() {
   const [items, projects] = await Promise.all([getContentItems(), getProjects()])
@@ -21,6 +22,7 @@ export default async function MarketingPage() {
             📣 Marketing
           </h1>
         </div>
+        <NewsletterListsSection />
         <CampaignsSection />
         <h2 className="font-semibold text-[12px] uppercase tracking-widest mb-3" style={{ color: '#9AA5AC' }}>Tools</h2>
         <ToolLinksGrid />

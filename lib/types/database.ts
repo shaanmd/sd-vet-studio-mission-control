@@ -357,6 +357,19 @@ export interface ProjectContact {
 
 export type NewsletterSourceTool = 'resend' | 'beehiiv' | 'convertkit' | 'systeme' | 'manual'
 
+export interface NewsletterList {
+  id: string
+  name: string
+  description: string | null
+  project_id: string | null
+  from_email: string
+  from_name: string
+  brand_primary: string
+  brand_accent: string
+  created_at: string
+  updated_at: string
+}
+
 export type CampaignStatus = 'draft' | 'sending' | 'sent' | 'failed'
 
 export type CampaignSendStatus =

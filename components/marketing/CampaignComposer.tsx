@@ -3,13 +3,22 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { marked } from 'marked'
-import type { Campaign } from '@/lib/types/database'
+import type { Campaign, NewsletterList } from '@/lib/types/database'
+import EditListButton from './EditListButton'
+
+interface ProjectOption { id: string; name: string; emoji: string | null }
+
+type ListConfigWithProject = NewsletterList & {
+  project?: { id: string; name: string; emoji: string | null } | null
+}
 
 interface Props {
   campaign: Campaign
   activeSubscriberCount: number
   perRecipientStats: { sent: number; failed: number } | null
   userEmail: string
+  listConfig: ListConfigWithProject | null
+  projects: ProjectOption[]
 }
 
 const STATUS_PILL: Record<string, { label: string; bg: string; color: string }> = {
@@ -40,7 +49,7 @@ function renderPreview(markdown: string, name = 'Jane'): string {
   return marked.parse(merged, { async: false }) as string
 }
 
-export default function CampaignComposer({ campaign, activeSubscriberCount, perRecipientStats, userEmail }: Props) {
+export default function CampaignComposer({ campaign, activeSubscriberCount, perRecipientStats, userEmail, listConfig, projects }: Props) {
   const router = useRouter()
   const isLocked = campaign.status === 'sending' || campaign.status === 'sent'
 
@@ -196,6 +205,46 @@ export default function CampaignComposer({ campaign, activeSubscriberCount, perR
             {campaign.sent_at && ` · ${new Date(campaign.sent_at).toLocaleString('en-AU')}`}
           </div>
         )}
+
+        {/* From / brand identity row */}
+        <div className="flex items-center justify-between flex-wrap gap-2 mt-3 pt-3" style={{ borderTop: '1px solid #F5F0E8' }}>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#9AA5AC', letterSpacing: 1, textTransform: 'uppercase' }}>
+              From
+            </span>
+            {listConfig ? (
+              <>
+                <code style={{ fontSize: 12, background: '#F5F0E8', padding: '2px 8px', borderRadius: 6, color: '#0D2035' }}>
+                  {listConfig.from_name} &lt;{listConfig.from_email}&gt;
+                </code>
+                <span title="Brand primary" style={{
+                  width: 16, height: 16, borderRadius: 4,
+                  background: listConfig.brand_primary, border: '1px solid #E8E2D6',
+                }} />
+                <span title="Brand accent" style={{
+                  width: 16, height: 16, borderRadius: 4,
+                  background: listConfig.brand_accent, border: '1px solid #E8E2D6',
+                }} />
+                {listConfig.project && (
+                  <span style={{
+                    fontSize: 11, color: '#6B7A82',
+                    background: '#FBF7EF', padding: '2px 8px', borderRadius: 999,
+                    border: '1px solid #E8E2D6',
+                  }}>
+                    {listConfig.project.emoji ?? '📁'} {listConfig.project.name}
+                  </span>
+                )}
+              </>
+            ) : (
+              <span style={{ fontSize: 12, color: '#B7791F' }}>
+                ⚠️ List not yet configured — sender will fall back to defaults
+              </span>
+            )}
+          </div>
+          {listConfig && (
+            <EditListButton mode="edit" list={listConfig} projects={projects} label="Edit list" />
+          )}
+        </div>
       </div>
 
       {/* Subject + preview text */}
@@ -252,10 +301,15 @@ export default function CampaignComposer({ campaign, activeSubscriberCount, perR
           <div style={{ background: '#FBF7EF', padding: '8px 14px', borderBottom: '1px solid #E8E2D6', fontSize: 11, fontWeight: 600, color: '#9AA5AC', letterSpacing: 1, textTransform: 'uppercase' }}>
             👁 Preview <span style={{ fontWeight: 400, textTransform: 'none' }}>(rendered for "Jane Smith")</span>
           </div>
+          {listConfig && (
+            <div style={{ height: 5, background: listConfig.brand_primary }} />
+          )}
           <div
             style={{
               padding: 22, fontSize: 14, lineHeight: 1.65,
               minHeight: 480, color: '#0D2035', overflow: 'auto',
+              // Brand-color the inline links inside the preview
+              ...(listConfig ? { ['--brand-primary' as any]: listConfig.brand_primary } : {}),
             }}
             dangerouslySetInnerHTML={{ __html: previewHtml }}
           />

@@ -20,10 +20,17 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   const { data: campaign, error } = await supabase
     .from('campaigns')
-    .select('subject, preview_text, body_markdown')
+    .select('subject, preview_text, body_markdown, list_name')
     .eq('id', id)
     .single()
   if (error || !campaign) return NextResponse.json({ error: 'Campaign not found' }, { status: 404 })
+
+  // Fetch list's branding config (from-email + colors)
+  const { data: listConfig } = await supabase
+    .from('newsletter_lists')
+    .select('from_email, from_name, brand_primary, brand_accent')
+    .eq('name', campaign.list_name)
+    .maybeSingle()
 
   // Pull the caller's name for merge-token preview
   const { data: profile } = await supabase
@@ -32,12 +39,19 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     .eq('id', user.id)
     .single()
 
+  const fromName = listConfig?.from_name ?? 'Mission Control'
+  const fromEmail = listConfig?.from_email ?? 'noreply@sdvetstudio.com'
+
   const outcome = await sendCampaignEmail({
     to: recipient,
     recipientName: profile?.name ?? null,
     subject: `[TEST] ${campaign.subject || '(no subject)'}`,
     bodyMarkdown: campaign.body_markdown,
     previewText: campaign.preview_text,
+    from: `${fromName} <${fromEmail}>`,
+    fromName,
+    brandPrimary: listConfig?.brand_primary ?? undefined,
+    brandAccent:  listConfig?.brand_accent  ?? undefined,
   })
 
   return NextResponse.json(outcome, { status: outcome.ok ? 200 : 500 })
