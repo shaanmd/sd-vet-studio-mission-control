@@ -357,6 +357,42 @@ export interface ProjectContact {
 
 export type NewsletterSourceTool = 'resend' | 'beehiiv' | 'convertkit' | 'systeme' | 'manual'
 
+export type CampaignStatus = 'draft' | 'sending' | 'sent' | 'failed'
+
+export type CampaignSendStatus =
+  | 'queued' | 'sent' | 'delivered' | 'bounced' | 'complained' | 'failed' | 'opened' | 'clicked'
+
+export interface Campaign {
+  id: string
+  list_name: string
+  subject: string
+  preview_text: string | null
+  body_markdown: string
+  status: CampaignStatus
+  recipient_count: number
+  sent_count: number
+  failed_count: number
+  sent_at: string | null
+  created_by: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface CampaignSend {
+  id: string
+  campaign_id: string
+  contact_id: string
+  email: string
+  resend_message_id: string | null
+  status: CampaignSendStatus
+  error_message: string | null
+  sent_at: string | null
+  delivered_at: string | null
+  opened_at: string | null
+  clicked_at: string | null
+  created_at: string
+}
+
 export interface NewsletterSubscription {
   id: string
   contact_id: string
