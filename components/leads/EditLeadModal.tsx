@@ -51,6 +51,12 @@ export default function EditLeadModal({ lead, projects, onClose }: Props) {
   const [deleting, setDeleting] = useState(false)
   const [converting, setConverting] = useState(false)
   const [convertedContactId, setConvertedContactId] = useState<string | null>(lead.converted_contact_id ?? null)
+
+  // Newsletter quick-subscribe state
+  const [subscribingList, setSubscribingList] = useState('')
+  const [subscribing, setSubscribing] = useState(false)
+  const [subscribeMsg, setSubscribeMsg] = useState<string | null>(null)
+  const COMMON_LISTS = ['SD VetStudio Main', 'SynAlpseVet', 'Behind the Bit', 'VetRehab']
   const [error, setError] = useState('')
 
   async function handleSave(e: React.FormEvent) {
@@ -99,6 +105,46 @@ export default function EditLeadModal({ lead, projects, onClose }: Props) {
     const { contact } = await res.json()
     setConvertedContactId(contact.id)
     setConverting(false)
+    router.refresh()
+  }
+
+  // Subscribe lead to newsletter — auto-converts to contact if not already converted
+  async function handleSubscribeToNewsletter() {
+    if (!subscribingList.trim()) { setSubscribeMsg('Pick a list first'); return }
+    setSubscribing(true)
+    setSubscribeMsg(null)
+
+    let contactId = convertedContactId
+
+    // Auto-convert if needed
+    if (!contactId) {
+      const convertRes = await fetch(`/api/leads/${lead.id}/convert`, { method: 'POST' })
+      if (!convertRes.ok) {
+        const j = await convertRes.json().catch(() => ({}))
+        setSubscribeMsg(j.error ?? 'Failed to convert lead')
+        setSubscribing(false)
+        return
+      }
+      const { contact } = await convertRes.json()
+      contactId = contact.id
+      setConvertedContactId(contact.id)
+    }
+
+    // Subscribe the contact
+    const subRes = await fetch(`/api/contacts/${contactId}/subscriptions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ list_name: subscribingList.trim(), source_tool: 'resend' }),
+    })
+    if (!subRes.ok) {
+      const j = await subRes.json().catch(() => ({}))
+      setSubscribeMsg(j.error ?? 'Failed to subscribe')
+      setSubscribing(false)
+      return
+    }
+    setSubscribeMsg(`✓ Subscribed to ${subscribingList.trim()}`)
+    setSubscribingList('')
+    setSubscribing(false)
     router.refresh()
   }
 
@@ -223,6 +269,53 @@ export default function EditLeadModal({ lead, projects, onClose }: Props) {
             <button type="submit" disabled={saving} className="flex-1 py-3 rounded-xl bg-teal-700 text-white font-medium disabled:opacity-50">
               {saving ? 'Saving…' : 'Save'}
             </button>
+          </div>
+
+          {/* Newsletter quick-subscribe */}
+          <div style={{ borderTop: '1px solid #E8E2D6', paddingTop: 12, marginTop: 4 }}>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">
+              📧 Subscribe to newsletter
+            </label>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <input
+                value={subscribingList}
+                onChange={e => { setSubscribingList(e.target.value); setSubscribeMsg(null) }}
+                placeholder="List name (e.g. SynAlpseVet)"
+                list="lead-newsletter-presets"
+                className={inputCls}
+                style={{ flex: 1 }}
+              />
+              <datalist id="lead-newsletter-presets">
+                {COMMON_LISTS.map(name => <option key={name} value={name} />)}
+              </datalist>
+              <button
+                type="button"
+                onClick={handleSubscribeToNewsletter}
+                disabled={subscribing || !subscribingList.trim()}
+                style={{
+                  fontSize: 12, fontWeight: 600,
+                  padding: '0 14px', borderRadius: 8, border: 'none',
+                  background: '#1E6B5E', color: '#fff', cursor: 'pointer',
+                  opacity: subscribing || !subscribingList.trim() ? 0.5 : 1,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {subscribing ? 'Subscribing…' : 'Subscribe'}
+              </button>
+            </div>
+            {subscribeMsg && (
+              <p
+                className="text-xs mt-1.5"
+                style={{ color: subscribeMsg.startsWith('✓') ? '#1E6B5E' : '#C0392B' }}
+              >
+                {subscribeMsg}
+              </p>
+            )}
+            {!convertedContactId && (
+              <p className="text-[11px] mt-1.5" style={{ color: '#9AA5AC' }}>
+                Subscribing will also convert this lead to a contact.
+              </p>
+            )}
           </div>
 
           {/* Convert to Contact */}
