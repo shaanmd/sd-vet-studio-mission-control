@@ -197,17 +197,40 @@ export async function GET(req: Request) {
     const tasks = [...personTasks, ...sharedTasks].slice(0, 3)
 
     try {
-      await resend.emails.send({
+      // Resend doesn't throw on logical errors (unverified domain, invalid
+      // recipient, etc.) — it returns { data, error }. Treat error as failure.
+      const resp = await resend.emails.send({
         from: process.env.DAILY_DIGEST_FROM ?? 'Mission Control <noreply@sdvetstudio.com>',
         to: recipient.email,
         subject: `Mission Control · ${new Date().toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })} 🎯`,
         html: buildEmailHtml(recipient.name, tasks, projectRows, allWins as WinRow[]),
       })
-      results.push({ name: recipient.name, email: recipient.email, status: 'sent' })
+      if (resp?.error) {
+        const e = resp.error as { name?: string; message?: string; statusCode?: number }
+        results.push({
+          name: recipient.name,
+          email: recipient.email,
+          status: `error: ${e.name ?? 'unknown'} — ${e.message ?? JSON.stringify(resp.error)}`,
+        })
+      } else {
+        results.push({
+          name: recipient.name,
+          email: recipient.email,
+          status: 'sent',
+          id: resp?.data?.id ?? null,
+        } as any)
+      }
     } catch (err: any) {
       results.push({ name: recipient.name, email: recipient.email, status: `error: ${err.message}` })
     }
   }
 
-  return NextResponse.json({ ok: true, results })
+  // Surface env hints so a "no key set" misconfig is visible
+  const env = {
+    has_resend_key: Boolean(process.env.RESEND_API_KEY),
+    has_cron_secret: Boolean(process.env.CRON_SECRET),
+    from: process.env.DAILY_DIGEST_FROM ?? 'Mission Control <noreply@sdvetstudio.com>',
+  }
+
+  return NextResponse.json({ ok: true, env, results })
 }
