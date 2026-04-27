@@ -133,7 +133,7 @@ export default async function CRMPage({ searchParams }: CRMPageProps) {
           >
             👥 Contacts
           </h1>
-          <NewContactButton />
+          <NewContactButton defaultStage={stage === 'all' ? 'customer' : stage} />
         </div>
 
         {/* Filter chips */}
@@ -178,7 +178,7 @@ export default async function CRMPage({ searchParams }: CRMPageProps) {
             <p className="text-sm mb-6 max-w-sm" style={{ color: '#6B7A82' }}>
               Add your first contact to start building your CRM.
             </p>
-            <NewContactButton label="+ Add contact →" />
+            <NewContactButton label="+ Add contact →" defaultStage={stage === 'all' ? 'customer' : stage} />
           </div>
         )}
 

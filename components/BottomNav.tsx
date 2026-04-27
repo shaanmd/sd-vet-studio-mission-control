@@ -7,7 +7,7 @@ const NAV_ITEMS = [
   { href: '/', icon: '🏠', label: 'Home' },
   { href: '/projects', icon: '📂', label: 'Projects' },
   { href: '/finance', icon: '💰', label: 'Finance' },
-  { href: '/leads', icon: '🎯', label: 'Leads' },
+  { href: '/crm', icon: '👥', label: 'CRM' },
   { href: '/log', icon: '🏆', label: 'Log' },
 ]
 
