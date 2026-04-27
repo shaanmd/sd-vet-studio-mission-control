@@ -182,7 +182,7 @@ export default function EditLeadModal({ lead, projects, onClose }: Props) {
           {convertedContactId ? (
             <a
               href={`/crm/${convertedContactId}`}
-              className="w-full text-center text-sm font-semibold py-2 rounded-lg"
+              className="block w-full text-center text-sm font-semibold py-2 rounded-lg no-underline"
               style={{ background: '#E8F4F0', color: '#1E6B5E' }}
             >
               ✓ Converted — view contact →
@@ -192,7 +192,7 @@ export default function EditLeadModal({ lead, projects, onClose }: Props) {
               type="button"
               onClick={handleConvert}
               disabled={converting}
-              className="w-full text-center text-sm font-semibold py-2 rounded-lg disabled:opacity-50"
+              className="block w-full text-center text-sm font-semibold py-2 rounded-lg disabled:opacity-50"
               style={{ background: '#F5F0E8', color: '#1E6B5E', border: '1px solid #1E6B5E' }}
             >
               {converting ? 'Converting…' : '👥 Convert to Contact'}
