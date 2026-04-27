@@ -347,6 +347,21 @@ export interface ProjectContact {
   created_at: string
 }
 
+export type NewsletterSourceTool = 'resend' | 'beehiiv' | 'convertkit' | 'systeme' | 'manual'
+
+export interface NewsletterSubscription {
+  id: string
+  contact_id: string
+  list_name: string
+  subscribed_at: string
+  unsubscribed_at: string | null
+  source_tool: NewsletterSourceTool
+  external_id: string | null
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
 export interface CommsLogEntry {
   id: string
   contact_id: string

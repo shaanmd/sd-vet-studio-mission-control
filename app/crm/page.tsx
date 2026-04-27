@@ -78,6 +78,7 @@ function formatLastComms(date: string | undefined): string | null {
 
 type ContactWithComms = Contact & {
   comms_log?: Pick<CommsLogEntry, 'date' | 'kind' | 'summary'>[]
+  newsletter_subscriptions?: { unsubscribed_at: string | null }[]
 }
 
 export default async function CRMPage() {
@@ -85,7 +86,7 @@ export default async function CRMPage() {
 
   const { data: contacts } = await supabase
     .from('contacts')
-    .select('*, comms_log(date, kind, summary)')
+    .select('*, comms_log(date, kind, summary), newsletter_subscriptions(unsubscribed_at)')
     .order('name') as { data: ContactWithComms[] | null }
 
   const contactList: ContactWithComms[] = contacts ?? []
@@ -142,6 +143,7 @@ export default async function CRMPage() {
               const lastCommsDate = sortedComms[0]?.date
               const lastCommsLabel = formatLastComms(lastCommsDate)
               const subtitle = [contact.role, contact.company].filter(Boolean).join(' · ')
+              const activeSubs = (contact.newsletter_subscriptions ?? []).filter(s => s.unsubscribed_at === null).length
 
               return (
                 <Link
@@ -178,6 +180,21 @@ export default async function CRMPage() {
                         {contact.name}
                       </span>
                       {getStatusPill(contact.status)}
+                      {activeSubs > 0 && (
+                        <span
+                          style={{
+                            fontSize: 10,
+                            fontWeight: 600,
+                            color: '#1E6B5E',
+                            background: '#E8F1EE',
+                            padding: '2px 6px',
+                            borderRadius: 999,
+                          }}
+                          title={`${activeSubs} active newsletter${activeSubs === 1 ? '' : 's'}`}
+                        >
+                          📧 {activeSubs}
+                        </span>
+                      )}
                     </div>
                     {subtitle && (
                       <div

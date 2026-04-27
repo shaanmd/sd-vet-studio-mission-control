@@ -2,10 +2,11 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import TopBar from '@/components/TopBar'
 import AccordionSection from '@/components/project-detail/AccordionSection'
-import type { Contact, ContactStatus, CommsLogEntry, CommsKind } from '@/lib/types/database'
+import type { Contact, ContactStatus, CommsLogEntry, CommsKind, NewsletterSubscription } from '@/lib/types/database'
 import ContactActions from './ContactActions'
 import CommsLog from './CommsLog'
 import WhatIKnow from './WhatIKnow'
+import Newsletters from './Newsletters'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -98,7 +99,7 @@ export default async function ContactDetailPage({ params }: PageProps) {
   const { id } = await params
   const supabase = await createClient()
 
-  const [contactRes, commsRes, projectsRes] = await Promise.all([
+  const [contactRes, commsRes, projectsRes, subscriptionsRes] = await Promise.all([
     supabase.from('contacts').select('*').eq('id', id).single(),
     supabase
       .from('comms_log')
@@ -110,6 +111,11 @@ export default async function ContactDetailPage({ params }: PageProps) {
       .from('project_contacts')
       .select('*, project:projects(id, name, emoji, stage, live_url)')
       .eq('contact_id', id),
+    supabase
+      .from('newsletter_subscriptions')
+      .select('*')
+      .eq('contact_id', id)
+      .order('subscribed_at', { ascending: false }),
   ])
 
   if (!contactRes.data || contactRes.error) notFound()
@@ -117,6 +123,8 @@ export default async function ContactDetailPage({ params }: PageProps) {
   const contact = contactRes.data as Contact
   const commsLog: CommsLogEntry[] = commsRes.data ?? []
   const linkedProjects: LinkedProject[] = projectsRes.data ?? []
+  const subscriptions: NewsletterSubscription[] = subscriptionsRes.data ?? []
+  const activeSubsCount = subscriptions.filter(s => s.unsubscribed_at === null).length
 
   const mostRecentComms = commsLog[0]
   const subtitle = [contact.role, contact.company, contact.location].filter(Boolean).join(' · ')
@@ -252,9 +260,9 @@ export default async function ContactDetailPage({ params }: PageProps) {
               big: String(commsLog.length),
             },
             {
-              label: 'Days as contact',
-              value: daysSince(contact.created_at),
-              big: String(daysSince(contact.created_at)),
+              label: 'Newsletters',
+              value: activeSubsCount,
+              big: String(activeSubsCount),
             },
             {
               label: 'Last contact',
@@ -321,6 +329,17 @@ export default async function ContactDetailPage({ params }: PageProps) {
         <div className="mb-3">
           <AccordionSection icon="💬" title="Comms log" defaultOpen>
             <CommsLog contactId={id} initialEntries={commsLog} />
+          </AccordionSection>
+        </div>
+
+        {/* ── Newsletters accordion ─────────────────────────────────── */}
+        <div className="mb-3">
+          <AccordionSection
+            icon="📧"
+            title={`Newsletters${activeSubsCount > 0 ? ` (${activeSubsCount})` : ''}`}
+            defaultOpen={subscriptions.length > 0}
+          >
+            <Newsletters contactId={id} initialSubscriptions={subscriptions} />
           </AccordionSection>
         </div>
 
