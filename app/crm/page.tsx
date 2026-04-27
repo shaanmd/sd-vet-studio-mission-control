@@ -2,8 +2,23 @@
 import { createClient } from '@/lib/supabase/server'
 import TopBar from '@/components/TopBar'
 import Link from 'next/link'
-import type { Contact, ContactStatus, CommsLogEntry } from '@/lib/types/database'
+import type { Contact, ContactStatus, CommsLogEntry, LifecycleStage } from '@/lib/types/database'
 import NewContactButton from './NewContactButton'
+import { channelMeta, broughtInByLabel } from '@/components/leads/sourceConstants'
+
+const LIFECYCLE_FILTERS: { value: 'all' | LifecycleStage; label: string }[] = [
+  { value: 'all',       label: 'All' },
+  { value: 'lead',      label: '🎯 Leads' },
+  { value: 'qualified', label: '🔬 Qualified' },
+  { value: 'customer',  label: '🏆 Customers' },
+  { value: 'past',      label: '📦 Past' },
+]
+
+const INTEREST_PILL: Record<string, { bg: string; color: string; emoji: string }> = {
+  hot:     { bg: '#FDECEA', color: '#C0392B', emoji: '🔥' },
+  warm:    { bg: '#FDF3E0', color: '#B7791F', emoji: '👍' },
+  curious: { bg: '#F3F4F6', color: '#6B7280', emoji: '🤷' },
+}
 
 function getInitials(name: string): string {
   return name
@@ -81,15 +96,30 @@ type ContactWithComms = Contact & {
   newsletter_subscriptions?: { unsubscribed_at: string | null }[]
 }
 
-export default async function CRMPage() {
+interface CRMPageProps {
+  searchParams: Promise<{ stage?: string }>
+}
+
+export default async function CRMPage({ searchParams }: CRMPageProps) {
   const supabase = await createClient()
+  const { stage: rawStage } = await searchParams
+  const stage = (LIFECYCLE_FILTERS.some(f => f.value === rawStage) ? rawStage : 'all') as 'all' | LifecycleStage
 
   const { data: contacts } = await supabase
     .from('contacts')
     .select('*, comms_log(date, kind, summary), newsletter_subscriptions(unsubscribed_at)')
     .order('name') as { data: ContactWithComms[] | null }
 
-  const contactList: ContactWithComms[] = contacts ?? []
+  const allContacts: ContactWithComms[] = contacts ?? []
+  const contactList = stage === 'all'
+    ? allContacts
+    : allContacts.filter(c => c.lifecycle_stage === stage)
+
+  // Per-stage counts for the filter chips
+  const counts: Record<string, number> = { all: allContacts.length }
+  for (const f of LIFECYCLE_FILTERS) {
+    if (f.value !== 'all') counts[f.value] = allContacts.filter(c => c.lifecycle_stage === f.value).length
+  }
 
   return (
     <>
@@ -106,10 +136,30 @@ export default async function CRMPage() {
           <NewContactButton />
         </div>
 
-        {/* Contact count */}
-        <p className="mb-5" style={{ fontSize: 13, color: '#6B7A82' }}>
-          {contactList.length} {contactList.length === 1 ? 'contact' : 'contacts'}
-        </p>
+        {/* Filter chips */}
+        <div className="flex flex-wrap items-center gap-1.5 mb-4">
+          {LIFECYCLE_FILTERS.map(f => {
+            const active = stage === f.value
+            const count = counts[f.value] ?? 0
+            return (
+              <Link
+                key={f.value}
+                href={f.value === 'all' ? '/crm' : `/crm?stage=${f.value}`}
+                style={{
+                  fontSize: 12, fontWeight: 600,
+                  padding: '5px 12px', borderRadius: 999,
+                  border: '1px solid',
+                  textDecoration: 'none',
+                  background: active ? '#1E2A35' : '#FFFFFF',
+                  borderColor: active ? '#1E2A35' : '#E8E2D6',
+                  color: active ? '#FFFFFF' : '#6B7A82',
+                }}
+              >
+                {f.label} · {count}
+              </Link>
+            )
+          })}
+        </div>
 
         {/* Empty state */}
         {contactList.length === 0 && (
@@ -144,6 +194,14 @@ export default async function CRMPage() {
               const lastCommsLabel = formatLastComms(lastCommsDate)
               const subtitle = [contact.role, contact.company].filter(Boolean).join(' · ')
               const activeSubs = (contact.newsletter_subscriptions ?? []).filter(s => s.unsubscribed_at === null).length
+              const channel = channelMeta(contact.source_channel ?? null)
+              const broughtBy = broughtInByLabel(contact.brought_in_by ?? null)
+              const interest = contact.interest_level ? INTEREST_PILL[contact.interest_level] : null
+              const sourceBits = [
+                channel ? `${channel.emoji} ${channel.label}` : null,
+                broughtBy ? `via ${broughtBy}` : null,
+                contact.source ?? null,
+              ].filter(Boolean).join(' · ')
 
               return (
                 <Link
@@ -180,6 +238,26 @@ export default async function CRMPage() {
                         {contact.name}
                       </span>
                       {getStatusPill(contact.status)}
+                      {interest && (
+                        <span
+                          style={{
+                            fontSize: 10, fontWeight: 600,
+                            padding: '2px 6px', borderRadius: 999,
+                            background: interest.bg, color: interest.color,
+                          }}
+                        >
+                          {interest.emoji} {contact.interest_level}
+                        </span>
+                      )}
+                      {contact.is_beta_tester && (
+                        <span style={{
+                          fontSize: 10, fontWeight: 600,
+                          padding: '2px 6px', borderRadius: 999,
+                          background: '#E8F4F0', color: '#1E6B5E',
+                        }}>
+                          Beta tester
+                        </span>
+                      )}
                       {activeSubs > 0 && (
                         <span
                           style={{
@@ -210,6 +288,14 @@ export default async function CRMPage() {
                         style={{ fontSize: 12, color: '#9AA5AC', marginTop: 1 }}
                       >
                         {contact.email}
+                      </div>
+                    )}
+                    {sourceBits && (
+                      <div
+                        className="truncate"
+                        style={{ fontSize: 11, color: '#9AA5AC', marginTop: 2 }}
+                      >
+                        {sourceBits}
                       </div>
                     )}
                   </div>

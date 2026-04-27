@@ -7,6 +7,8 @@ import ContactActions from './ContactActions'
 import CommsLog from './CommsLog'
 import WhatIKnow from './WhatIKnow'
 import Newsletters from './Newsletters'
+import LifecycleStageEditor from './LifecycleStageEditor'
+import { channelMeta, broughtInByLabel } from '@/components/leads/sourceConstants'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -244,6 +246,29 @@ export default async function ContactDetailPage({ params }: PageProps) {
             {/* Top-right action buttons */}
             <ContactActions contactId={id} />
           </div>
+
+          {/* Lifecycle + interest editor */}
+          <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #F5F0E8' }}>
+            <LifecycleStageEditor
+              contactId={id}
+              initialStage={contact.lifecycle_stage}
+              initialInterest={contact.interest_level}
+            />
+          </div>
+
+          {/* Source row */}
+          {(contact.source_channel || contact.brought_in_by || contact.source) && (
+            <div style={{ marginTop: 12, fontSize: 12, color: '#6B7A82' }}>
+              <span style={{ fontWeight: 600, color: '#9AA5AC', marginRight: 6 }}>Source:</span>
+              {[
+                channelMeta(contact.source_channel)?.emoji && channelMeta(contact.source_channel)
+                  ? `${channelMeta(contact.source_channel)!.emoji} ${channelMeta(contact.source_channel)!.label}`
+                  : null,
+                contact.brought_in_by ? `via ${broughtInByLabel(contact.brought_in_by)}` : null,
+                contact.source ?? null,
+              ].filter(Boolean).join(' · ')}
+            </div>
+          )}
         </div>
 
         {/* ── Pulse strip ───────────────────────────────────────────── */}

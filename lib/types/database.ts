@@ -317,6 +317,7 @@ export interface LeadNote {
 
 export type ContactStatus = 'active' | 'past' | 'paused'
 export type CommsKind = 'email' | 'call' | 'meeting' | 'note'
+export type LifecycleStage = 'lead' | 'qualified' | 'customer' | 'past'
 
 export interface Contact {
   id: string
@@ -330,6 +331,13 @@ export interface Contact {
   linkedin: string | null
   status: ContactStatus
   is_repeat: boolean
+  // Pipeline fields lifted from the old leads table — apply to anyone in your audience
+  lifecycle_stage: LifecycleStage
+  interest_level: InterestLevel | null
+  source_channel: SourceChannel | null
+  brought_in_by: BroughtInBy | null
+  source: string | null
+  is_beta_tester: boolean
   comms_style: string | null
   decision_style: string | null
   personal_context: string | null
