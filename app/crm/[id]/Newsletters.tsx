@@ -1,16 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { NewsletterSubscription, NewsletterSourceTool } from '@/lib/types/database'
 
-// Common lists — used as quick presets in the add form. Free text input still allowed.
-const COMMON_LISTS = [
-  'SD VetStudio Main',
-  'SynAlpseVet',
-  'Behind the Bit',
-  'VetRehab',
-]
+interface ListOption {
+  id: string
+  name: string
+  active: number
+}
 
 const SOURCE_TOOLS: { value: NewsletterSourceTool; label: string }[] = [
   { value: 'resend',     label: 'Resend' },
@@ -44,6 +42,16 @@ export default function Newsletters({ contactId, initialSubscriptions }: Props) 
 
   // per-row state
   const [busyId, setBusyId] = useState<string | null>(null)
+
+  // Real list options — pulled from /api/newsletter-lists when the form opens
+  const [listOptions, setListOptions] = useState<ListOption[]>([])
+  useEffect(() => {
+    if (!adding) return
+    fetch('/api/newsletter-lists')
+      .then(r => r.ok ? r.json() : [])
+      .then((data) => setListOptions(Array.isArray(data) ? data : []))
+      .catch(() => setListOptions([]))
+  }, [adding])
 
   async function handleSubscribe(e: React.FormEvent) {
     e.preventDefault()
@@ -232,8 +240,33 @@ export default function Newsletters({ contactId, initialSubscriptions }: Props) 
                 autoFocus
               />
               <datalist id="newsletter-list-presets">
-                {COMMON_LISTS.map(name => <option key={name} value={name} />)}
+                {listOptions.map(l => (
+                  <option key={l.id} value={l.name}>
+                    {l.active} active
+                  </option>
+                ))}
               </datalist>
+              {listOptions.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-1.5">
+                  {listOptions.slice(0, 6).map(l => (
+                    <button
+                      key={l.id}
+                      type="button"
+                      onClick={() => setListName(l.name)}
+                      style={{
+                        fontSize: 10, fontWeight: 600,
+                        padding: '2px 8px', borderRadius: 999,
+                        border: `1px solid ${listName === l.name ? '#1E6B5E' : '#E8E2D6'}`,
+                        background: listName === l.name ? '#E8F4F0' : '#fff',
+                        color: listName === l.name ? '#1E6B5E' : '#6B7A82',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {l.name} · {l.active}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div>
