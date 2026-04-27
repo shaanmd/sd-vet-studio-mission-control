@@ -20,6 +20,8 @@ export type BetaAccepted = 'yes' | 'no' | 'pending'
 
 export type BetaFeedbackStatus = 'awaiting' | 'received' | 'follow_up'
 
+export type LeadStatus = 'active' | 'contacted' | 'trialing' | 'converted' | 'archived'
+
 export type NoteType = 'note' | 'stage_change' | 'deploy' | 'task_complete'
 
 export type DeployStatus = 'ready' | 'building' | 'error'
@@ -229,6 +231,7 @@ export interface Lead {
   beta_accepted: BetaAccepted | null
   beta_app_version: string | null
   beta_feedback_status: BetaFeedbackStatus
+  status: LeadStatus
   added_by: string
   created_at: string
 }
