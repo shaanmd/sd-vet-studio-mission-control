@@ -11,7 +11,7 @@ export default function TestDigestButton() {
   } | null>(null)
 
   async function handleClick() {
-    if (!confirm('Send a test daily digest now to Shaan and Deb?')) return
+    if (!confirm('Send the daily digest now to Shaan and Deb?\n\nThis is the real thing — tasks, projects, wins. Same content tomorrow morning at 7am.')) return
     setSending(true)
     setResult(null)
     try {
@@ -51,7 +51,7 @@ export default function TestDigestButton() {
           alignSelf: 'flex-start',
         }}
       >
-        {sending ? 'Sending…' : '📧 Send test digest now'}
+        {sending ? 'Sending…' : '📧 Send digest now'}
       </button>
       {result && (
         <div
