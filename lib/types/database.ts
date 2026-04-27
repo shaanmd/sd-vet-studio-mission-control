@@ -373,7 +373,9 @@ export interface NewsletterList {
 export type CampaignStatus = 'draft' | 'sending' | 'sent' | 'failed'
 
 export type CampaignSendStatus =
-  | 'queued' | 'sent' | 'delivered' | 'bounced' | 'complained' | 'failed' | 'opened' | 'clicked'
+  | 'queued' | 'sent' | 'delivered' | 'bounced' | 'complained' | 'failed' | 'opened' | 'clicked' | 'unsubscribed'
+
+export type DeviceType = 'mobile' | 'desktop' | 'tablet' | 'unknown'
 
 export interface Campaign {
   id: string
@@ -385,6 +387,12 @@ export interface Campaign {
   recipient_count: number
   sent_count: number
   failed_count: number
+  delivered_count: number
+  opened_count: number
+  clicked_count: number
+  bounced_count: number
+  complained_count: number
+  unsubscribed_count: number
   sent_at: string | null
   created_by: string | null
   created_at: string
@@ -403,6 +411,26 @@ export interface CampaignSend {
   delivered_at: string | null
   opened_at: string | null
   clicked_at: string | null
+  bounced_at: string | null
+  complained_at: string | null
+  unsubscribed_at: string | null
+  open_count: number
+  click_count: number
+  device: DeviceType | null
+  first_opened_at: string | null
+  last_event_at: string | null
+  created_at: string
+}
+
+export interface CampaignLinkClick {
+  id: string
+  campaign_id: string
+  contact_id: string | null
+  send_id: string | null
+  url: string
+  user_agent: string | null
+  device: DeviceType | null
+  clicked_at: string
   created_at: string
 }
 

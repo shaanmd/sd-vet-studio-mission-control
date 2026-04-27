@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { marked } from 'marked'
 import type { Campaign, NewsletterList } from '@/lib/types/database'
 import EditListButton from './EditListButton'
+import CampaignEngagementStrip from './CampaignEngagementStrip'
 
 interface ProjectOption { id: string; name: string; emoji: string | null }
 
@@ -19,6 +20,7 @@ interface Props {
   userEmail: string
   listConfig: ListConfigWithProject | null
   projects: ProjectOption[]
+  firstResendMessageId: string | null
 }
 
 const STATUS_PILL: Record<string, { label: string; bg: string; color: string }> = {
@@ -49,7 +51,7 @@ function renderPreview(markdown: string, name = 'Jane'): string {
   return marked.parse(merged, { async: false }) as string
 }
 
-export default function CampaignComposer({ campaign, activeSubscriberCount, perRecipientStats, userEmail, listConfig, projects }: Props) {
+export default function CampaignComposer({ campaign, activeSubscriberCount, perRecipientStats, userEmail, listConfig, projects, firstResendMessageId }: Props) {
   const router = useRouter()
   const isLocked = campaign.status === 'sending' || campaign.status === 'sent'
 
@@ -246,6 +248,14 @@ export default function CampaignComposer({ campaign, activeSubscriberCount, perR
           )}
         </div>
       </div>
+
+      {/* Engagement strip — only for sent campaigns */}
+      {campaign.status === 'sent' && (
+        <CampaignEngagementStrip
+          campaign={campaign}
+          firstResendMessageId={firstResendMessageId}
+        />
+      )}
 
       {/* Subject + preview text */}
       <div className="rounded-2xl" style={{ background: '#fff', border: '1px solid #E8E2D6', padding: 16 }}>

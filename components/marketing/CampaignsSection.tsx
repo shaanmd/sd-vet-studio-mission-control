@@ -64,11 +64,15 @@ export default async function CampaignsSection() {
         <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #E8E2D6', background: '#fff' }}>
           {list.map((c, i) => {
             const pill = STATUS_PILL[c.status] ?? STATUS_PILL.draft
-            const subtitle = c.status === 'sent'
-              ? `Sent ${formatDate(c.sent_at)} · ${c.sent_count}/${c.recipient_count} delivered`
-              : c.status === 'sending'
-                ? `Sending now · ${c.sent_count}/${c.recipient_count}`
-                : `Last edited ${formatDate(c.updated_at)}`
+            const subtitle = (() => {
+              if (c.status === 'sent') {
+                const openPct = c.sent_count > 0 ? Math.round((c.opened_count / c.sent_count) * 100) : 0
+                const clickPct = c.sent_count > 0 ? Math.round((c.clicked_count / c.sent_count) * 100) : 0
+                return `Sent ${formatDate(c.sent_at)} · ${c.sent_count} delivered · ${openPct}% open · ${clickPct}% click`
+              }
+              if (c.status === 'sending') return `Sending now · ${c.sent_count}/${c.recipient_count}`
+              return `Last edited ${formatDate(c.updated_at)}`
+            })()
             return (
               <Link
                 key={c.id}

@@ -44,8 +44,9 @@ export default async function CampaignComposerPage({ params }: PageProps) {
     .order('name')
   const projects = (projectsRes.data ?? []).map((p: any) => ({ id: p.id, name: p.name, emoji: p.emoji ?? null }))
 
-  // Recent sends for stats line
+  // Per-recipient send/fail counts for the header status line
   let perRecipientStats: { sent: number; failed: number } | null = null
+  let firstResendMessageId: string | null = null
   if (campaign.status === 'sent' || campaign.status === 'failed' || campaign.status === 'sending') {
     const { count: sent } = await supabase
       .from('campaign_sends')
@@ -58,6 +59,17 @@ export default async function CampaignComposerPage({ params }: PageProps) {
       .eq('campaign_id', id)
       .eq('status', 'failed')
     perRecipientStats = { sent: sent ?? 0, failed: failed ?? 0 }
+
+    // First Resend message id — used to deep-link to Resend's dashboard
+    const { data: firstSend } = await supabase
+      .from('campaign_sends')
+      .select('resend_message_id')
+      .eq('campaign_id', id)
+      .not('resend_message_id', 'is', null)
+      .order('sent_at', { ascending: true })
+      .limit(1)
+      .maybeSingle()
+    firstResendMessageId = firstSend?.resend_message_id ?? null
   }
 
   return (
@@ -71,6 +83,7 @@ export default async function CampaignComposerPage({ params }: PageProps) {
           userEmail={user.email ?? ''}
           listConfig={listConfig}
           projects={projects}
+          firstResendMessageId={firstResendMessageId}
         />
       </div>
     </>
