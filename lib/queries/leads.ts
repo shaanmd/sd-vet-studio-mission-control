@@ -20,7 +20,11 @@ export async function createLead(values: {
   contact_email?: string | null
   contact_phone?: string | null
   source?: string | null
+  source_channel?: string | null
+  brought_in_by?: string | null
   interest_level?: string
+  is_beta_tester?: boolean
+  status?: string
   added_by: string
 }) {
   const supabase = await createClient()

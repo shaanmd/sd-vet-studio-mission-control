@@ -93,7 +93,12 @@ export default function AddLeadForm({ projects: initialProjects, defaultProjectI
       }),
     })
 
-    if (!res.ok) { setError('Failed to save'); setSaving(false); return }
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}))
+      setError(j.error ?? 'Failed to save')
+      setSaving(false)
+      return
+    }
     router.refresh()
     onClose()
   }

@@ -20,6 +20,23 @@ export async function POST(req: Request) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const body = await req.json()
   if (!body.name || !body.project_id) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
-  const lead = await createLead({ ...body, added_by: user.id })
-  return NextResponse.json(lead)
+
+  // Whitelist columns that actually exist on the leads table.
+  // `notes` and `links` come from the form but live in separate tables / aren't modeled yet.
+  const allowed = [
+    'project_id', 'name', 'role_clinic', 'contact_email', 'contact_phone',
+    'source', 'source_channel', 'brought_in_by',
+    'interest_level', 'is_beta_tester', 'status',
+  ] as const
+  const values: Record<string, unknown> = { added_by: user.id }
+  for (const key of allowed) {
+    if (body[key] !== undefined) values[key] = body[key]
+  }
+
+  try {
+    const lead = await createLead(values as Parameters<typeof createLead>[0])
+    return NextResponse.json(lead)
+  } catch (err: any) {
+    return NextResponse.json({ error: err?.message ?? 'Failed to create lead' }, { status: 500 })
+  }
 }
