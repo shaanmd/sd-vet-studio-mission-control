@@ -6,6 +6,10 @@ import {
   buildEnergyTagPrompt,
   parseEnergyResponse,
   parseNextStepResponse,
+  parseToolUses,
+  validateAction,
+  buildSummaryPrompt,
+  type ProposedAction,
 } from '../ai'
 import type { Project, Task, ActivityLogEntry } from '@/lib/types/database'
 
@@ -226,5 +230,127 @@ describe('parseNextStepResponse', () => {
     const longText = 'A'.repeat(100)
     const result = parseNextStepResponse(longText)
     expect(result.task).toHaveLength(80)
+  })
+})
+
+// ── parseToolUses ─────────────────────────────────────────────────────────────
+
+describe('parseToolUses', () => {
+  const projectsById = { p1: { name: 'Mockingbird' } }
+
+  it('maps create_task with known project_id to a project task', () => {
+    const { taskActions, summaryRequests } = parseToolUses(
+      [{ name: 'create_task', input: { title: 'Email the vet', project_id: 'p1' } }],
+      projectsById,
+    )
+    expect(summaryRequests).toEqual([])
+    expect(taskActions).toEqual([
+      { kind: 'create_task', target: 'project', project_id: 'p1', project_name: 'Mockingbird', title: 'Email the vet' },
+    ])
+  })
+
+  it('maps create_task with no project_id to a personal task', () => {
+    const { taskActions } = parseToolUses(
+      [{ name: 'create_task', input: { title: 'Buy stamps' } }],
+      projectsById,
+    )
+    expect(taskActions[0]).toEqual({
+      kind: 'create_task', target: 'personal', project_id: null, project_name: null, title: 'Buy stamps',
+    })
+  })
+
+  it('treats an unknown project_id as a personal task', () => {
+    const { taskActions } = parseToolUses(
+      [{ name: 'create_task', input: { title: 'Do thing', project_id: 'nope' } }],
+      projectsById,
+    )
+    expect(taskActions[0].target).toBe('personal')
+    expect(taskActions[0].project_id).toBeNull()
+  })
+
+  it('emits multiple task actions from multiple tool uses', () => {
+    const { taskActions } = parseToolUses(
+      [
+        { name: 'create_task', input: { title: 'A' } },
+        { name: 'create_task', input: { title: 'B' } },
+      ],
+      projectsById,
+    )
+    expect(taskActions).toHaveLength(2)
+  })
+
+  it('collects summary requests with known project_id only', () => {
+    const { summaryRequests } = parseToolUses(
+      [
+        { name: 'generate_project_summary', input: { project_id: 'p1', extra_notes: 'signed contract' } },
+        { name: 'generate_project_summary', input: { project_id: 'ghost' } },
+      ],
+      projectsById,
+    )
+    expect(summaryRequests).toEqual([
+      { project_id: 'p1', project_name: 'Mockingbird', extra_notes: 'signed contract' },
+    ])
+  })
+
+  it('ignores tasks with a blank title', () => {
+    const { taskActions } = parseToolUses(
+      [{ name: 'create_task', input: { title: '   ' } }],
+      projectsById,
+    )
+    expect(taskActions).toEqual([])
+  })
+})
+
+// ── validateAction ────────────────────────────────────────────────────────────
+
+describe('validateAction', () => {
+  const ids = new Set(['p1'])
+
+  it('accepts a personal task with a title', () => {
+    const a: ProposedAction = { kind: 'create_task', target: 'personal', project_id: null, project_name: null, title: 'X' }
+    expect(validateAction(a, ids)).toEqual({ ok: true })
+  })
+
+  it('rejects an empty title', () => {
+    const a: ProposedAction = { kind: 'create_task', target: 'personal', project_id: null, project_name: null, title: '' }
+    expect(validateAction(a, ids).ok).toBe(false)
+  })
+
+  it('rejects a project task whose project_id is unknown', () => {
+    const a: ProposedAction = { kind: 'create_task', target: 'project', project_id: 'ghost', project_name: 'x', title: 'X' }
+    expect(validateAction(a, ids).ok).toBe(false)
+  })
+
+  it('rejects a summary update for an unknown project', () => {
+    const a: ProposedAction = { kind: 'update_summary', project_id: 'ghost', project_name: 'x', summary: 'hi' }
+    expect(validateAction(a, ids).ok).toBe(false)
+  })
+
+  it('accepts a valid summary update', () => {
+    const a: ProposedAction = { kind: 'update_summary', project_id: 'p1', project_name: 'M', summary: 'hi' }
+    expect(validateAction(a, ids)).toEqual({ ok: true })
+  })
+})
+
+// ── buildSummaryPrompt ────────────────────────────────────────────────────────
+
+describe('buildSummaryPrompt', () => {
+  it('includes project name, stage, tasks, and extra notes', () => {
+    const prompt = buildSummaryPrompt(
+      { name: 'Mockingbird', stage: 'building', summary: 'old', tasks: [{ title: 'Ship MVP', completed: false }] },
+      'we signed the contract',
+    )
+    expect(prompt).toContain('Mockingbird')
+    expect(prompt).toContain('building')
+    expect(prompt).toContain('Ship MVP')
+    expect(prompt).toContain('we signed the contract')
+  })
+
+  it('handles no extra notes', () => {
+    const prompt = buildSummaryPrompt(
+      { name: 'X', stage: 'inbox', summary: null, tasks: [] },
+      null,
+    )
+    expect(prompt).toContain('X')
   })
 })
