@@ -4,12 +4,12 @@ import { createClient } from '@/lib/supabase/server'
 import { getPinnedProjects } from '@/lib/queries/projects'
 import { getNextStepTasks } from '@/lib/queries/personal-tasks'
 import { getRevenueEntries } from '@/lib/queries/revenue'
-import { getRevenueTotal, filterCurrentMonth } from '@/lib/finance'
 import TopBar from '@/components/TopBar'
 import YourNext3 from '@/components/home/YourNext3'
 import FocusProjects from '@/components/home/FocusProjects'
 import RevenueTiles from '@/components/home/RevenueTiles'
-import FinancialGoal from '@/components/home/FinancialGoal'
+import Scratchpad from '@/components/home/Scratchpad'
+import CommandBox from '@/components/home/CommandBox'
 import { Greeting } from '@/components/home/Greeting'
 import type { Profile } from '@/lib/types/database'
 
@@ -39,13 +39,10 @@ export default async function HomePage() {
     getNextStepTasks(),
     getPinnedProjects(),
     getRevenueEntries(),
-    supabase.from('settings').select('value').eq('key', 'financial_goal').single(),
+    supabase.from('settings').select('value').eq('key', 'home_scratchpad').single(),
   ])
 
-  const financialGoal = (settingsRow.data?.value as any) ?? null
-  const ytdRevenue = getRevenueTotal(
-    revenueEntries.filter(e => new Date((e as any).revenue_date ?? (e as any).created_at).getFullYear() === new Date().getFullYear())
-  )
+  const scratchpadText = (settingsRow.data?.value as string | null) ?? ''
 
   return (
     <>
@@ -77,8 +74,11 @@ export default async function HomePage() {
           <Greeting name={currentName} />
         </div>
 
-        {/* Financial goal */}
-        <FinancialGoal initialGoal={financialGoal} currentRevenue={ytdRevenue} />
+        {/* Quick capture (AI) */}
+        <CommandBox />
+
+        {/* Scratchpad */}
+        <Scratchpad initialText={scratchpadText} />
 
         {/* Revenue tiles */}
         <RevenueTiles entries={revenueEntries} />
