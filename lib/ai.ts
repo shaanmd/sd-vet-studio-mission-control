@@ -127,33 +127,6 @@ Rules:
 - Only use project ids from the provided list. If unsure which project, omit project_id (personal task).
 - If the text is not an actionable request, do not call any tool.`
 
-export const COMMAND_TOOLS = [
-  {
-    name: 'create_task',
-    description: 'Create a to-do. Set project_id when the task belongs to a named project; omit for a personal next-step task.',
-    input_schema: {
-      type: 'object' as const,
-      properties: {
-        title: { type: 'string', description: 'Short actionable task title' },
-        project_id: { type: 'string', description: 'Id of the project this task belongs to, if any' },
-      },
-      required: ['title'],
-    },
-  },
-  {
-    name: 'generate_project_summary',
-    description: "Write or rewrite a project's summary from its data plus any extra notes.",
-    input_schema: {
-      type: 'object' as const,
-      properties: {
-        project_id: { type: 'string', description: 'Id of the project to summarise' },
-        extra_notes: { type: 'string', description: 'Extra context the user provided' },
-      },
-      required: ['project_id'],
-    },
-  },
-]
-
 interface ParsedTools {
   taskActions: Extract<ProposedAction, { kind: 'create_task' }>[]
   summaryRequests: { project_id: string; project_name: string; extra_notes: string | null }[]

@@ -1,10 +1,8 @@
-import Anthropic from '@anthropic-ai/sdk'
+import { generateText } from 'ai'
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { buildWinSummaryPrompt, WIN_SUMMARY_SYSTEM } from '@/lib/ai'
 import type { ActivityLogEntry } from '@/lib/types/database'
-
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 export async function POST(req: Request) {
   const supabase = await createClient()
@@ -20,13 +18,12 @@ export async function POST(req: Request) {
 
   const userPrompt = buildWinSummaryPrompt(wins)
 
-  const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 256,
+  const { text } = await generateText({
+    model: 'anthropic/claude-sonnet-4.6',
+    maxOutputTokens: 256,
     system: WIN_SUMMARY_SYSTEM,
-    messages: [{ role: 'user', content: userPrompt }],
+    prompt: userPrompt,
   })
 
-  const summary = message.content[0]?.type === 'text' ? message.content[0].text.trim() : ''
-  return NextResponse.json({ summary })
+  return NextResponse.json({ summary: text.trim() })
 }

@@ -1,9 +1,7 @@
-import Anthropic from '@anthropic-ai/sdk'
+import { generateText } from 'ai'
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { buildEnergyTagPrompt, ENERGY_TAG_SYSTEM, parseEnergyResponse } from '@/lib/ai'
-
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 export async function POST(req: Request) {
   const supabase = await createClient()
@@ -19,15 +17,14 @@ export async function POST(req: Request) {
 
   const userPrompt = buildEnergyTagPrompt(taskTitle)
 
-  const message = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001',
-    max_tokens: 16,
+  const { text } = await generateText({
+    model: 'anthropic/claude-haiku-4.5',
+    maxOutputTokens: 16,
     system: ENERGY_TAG_SYSTEM,
-    messages: [{ role: 'user', content: userPrompt }],
+    prompt: userPrompt,
   })
 
-  const raw = message.content[0]?.type === 'text' ? message.content[0].text : ''
-  const energy = parseEnergyResponse(raw)
+  const energy = parseEnergyResponse(text)
 
   return NextResponse.json({ energy })
 }

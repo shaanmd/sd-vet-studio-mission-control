@@ -1,10 +1,8 @@
-import Anthropic from '@anthropic-ai/sdk'
+import { generateText } from 'ai'
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { buildNextStepPrompt, NEXT_STEP_SYSTEM, parseNextStepResponse } from '@/lib/ai'
 import type { Project, Task } from '@/lib/types/database'
-
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 export async function POST(req: Request) {
   const supabase = await createClient()
@@ -21,15 +19,14 @@ export async function POST(req: Request) {
 
   const userPrompt = buildNextStepPrompt(project, tasks)
 
-  const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 256,
+  const { text } = await generateText({
+    model: 'anthropic/claude-sonnet-4.6',
+    maxOutputTokens: 256,
     system: NEXT_STEP_SYSTEM,
-    messages: [{ role: 'user', content: userPrompt }],
+    prompt: userPrompt,
   })
 
-  const raw = message.content[0]?.type === 'text' ? message.content[0].text : ''
-  const result = parseNextStepResponse(raw)
+  const result = parseNextStepResponse(text)
 
   return NextResponse.json(result)
 }

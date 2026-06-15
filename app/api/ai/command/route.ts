@@ -1,10 +1,10 @@
-import Anthropic from '@anthropic-ai/sdk'
+import { generateText, tool } from 'ai'
+import { z } from 'zod'
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getProjects, getProject } from '@/lib/queries/projects'
 import {
   COMMAND_SYSTEM,
-  COMMAND_TOOLS,
   SUMMARY_SYSTEM,
   buildSummaryPrompt,
   parseToolUses,
@@ -12,7 +12,22 @@ import {
   type ToolUse,
 } from '@/lib/ai'
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+const commandTools = {
+  create_task: tool({
+    description: 'Create a to-do. Set project_id when the task belongs to a named project; omit for a personal next-step task.',
+    inputSchema: z.object({
+      title: z.string().describe('Short actionable task title'),
+      project_id: z.string().optional().describe('Id of the project this task belongs to, if any'),
+    }),
+  }),
+  generate_project_summary: tool({
+    description: "Write or rewrite a project's summary from its data plus any extra notes.",
+    inputSchema: z.object({
+      project_id: z.string().describe('Id of the project to summarise'),
+      extra_notes: z.string().optional().describe('Extra context the user provided'),
+    }),
+  }),
+}
 
 export async function POST(req: Request) {
   const supabase = await createClient()
@@ -28,17 +43,18 @@ export async function POST(req: Request) {
   const projectsById = Object.fromEntries(projects.map(p => [p.id, { name: p.name }]))
   const projectList = projects.map(p => `- ${p.name} (id: ${p.id}, stage: ${p.stage})`).join('\n') || 'None'
 
-  const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 1024,
+  const result = await generateText({
+    model: 'anthropic/claude-sonnet-4.6',
+    maxOutputTokens: 1024,
     system: COMMAND_SYSTEM,
-    tools: COMMAND_TOOLS,
-    messages: [{ role: 'user', content: `Projects:\n${projectList}\n\nUser request:\n${text}` }],
+    tools: commandTools,
+    prompt: `Projects:\n${projectList}\n\nUser request:\n${text}`,
   })
 
-  const toolUses: ToolUse[] = message.content
-    .filter((b): b is Anthropic.ToolUseBlock => b.type === 'tool_use')
-    .map(b => ({ name: b.name, input: b.input as Record<string, unknown> }))
+  const toolUses: ToolUse[] = result.toolCalls.map(tc => ({
+    name: tc.toolName,
+    input: tc.input as Record<string, unknown>,
+  }))
 
   const { taskActions, summaryRequests } = parseToolUses(toolUses, projectsById)
 
@@ -55,19 +71,19 @@ export async function POST(req: Request) {
       },
       reqSummary.extra_notes,
     )
-    const sum = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 400,
+    const { text: summary } = await generateText({
+      model: 'anthropic/claude-sonnet-4.6',
+      maxOutputTokens: 400,
       system: SUMMARY_SYSTEM,
-      messages: [{ role: 'user', content: prompt }],
+      prompt,
     })
-    const summary = sum.content[0]?.type === 'text' ? sum.content[0].text.trim() : ''
-    if (summary) {
+    const trimmed = summary.trim()
+    if (trimmed) {
       summaryActions.push({
         kind: 'update_summary',
         project_id: reqSummary.project_id,
         project_name: reqSummary.project_name,
-        summary,
+        summary: trimmed,
       })
     }
   }
