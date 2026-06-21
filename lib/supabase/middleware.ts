@@ -1,7 +1,19 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+// Public endpoints that authenticate themselves (cron secret / webhook
+// signature) and must NOT be redirected to /login by the session gate.
+const PUBLIC_PATHS = [
+  '/api/email/daily-digest', // Vercel cron — validates CRON_SECRET internally
+  '/api/webhooks/',          // inbound webhooks — verify their own signatures
+]
+
 export async function updateSession(request: NextRequest) {
+  // Let self-authenticating public endpoints through untouched.
+  if (PUBLIC_PATHS.some((p) => request.nextUrl.pathname.startsWith(p))) {
+    return NextResponse.next({ request })
+  }
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
