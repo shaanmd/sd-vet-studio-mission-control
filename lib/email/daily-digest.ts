@@ -16,7 +16,7 @@ export interface DigestRecipient {
 
 export const DEFAULT_RECIPIENTS: DigestRecipient[] = [
   { name: 'Shaan', email: 'drshaan@mockingbirdvets.com.au', assignedTo: 'shaan' },
-  { name: 'Deb',   email: 'vetrehab@gmail.com',             assignedTo: 'deb'   },
+  { name: 'Deb',   email: 'drdebvetrehab@gmail.com',        assignedTo: 'deb'   },
 ]
 
 export interface DigestResult {
