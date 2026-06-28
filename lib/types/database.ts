@@ -494,3 +494,51 @@ export interface ActivityLogWithDetails extends ActivityLogEntry {
 export interface ProjectNoteWithAuthor extends ProjectNote {
   author?: Pick<Profile, 'id' | 'name' | 'avatar_url'>
 }
+
+// ── Cycle Focus ───────────────────────────────────────────────────────────────
+
+export type CyclePhase = 'upcoming' | 'active' | 'cooldown' | 'done'
+export type CheckinStatus = 'on_track' | 'stuck' | 'done'
+export type BetOwner = 'shaan' | 'deb' | 'both'
+
+export interface Cycle {
+  id: string
+  name: string
+  starts_on: string          // 'YYYY-MM-DD'
+  ends_on: string            // 'YYYY-MM-DD'
+  cooldown_ends_on: string   // 'YYYY-MM-DD'
+  created_by: 'shaan' | 'deb' | null
+  created_at: string
+}
+
+export interface CycleBet {
+  id: string
+  cycle_id: string
+  project_id: string
+  goal_line: string
+  owner: BetOwner
+  sort_order: number
+  created_at: string
+}
+
+export interface BetCheckin {
+  id: string
+  bet_id: string
+  checkin_date: string       // 'YYYY-MM-DD'
+  status: CheckinStatus
+  note: string | null
+  created_by: 'shaan' | 'deb' | null
+  created_at: string
+}
+
+export interface CycleWithPhase extends Cycle {
+  phase: CyclePhase
+  weekOf: number             // 1..totalWeeks during active, 0 before start
+  totalWeeks: number
+  daysLeft: number           // whole days until ends_on, min 0
+}
+
+export interface BetWithDetails extends CycleBet {
+  project: Pick<Project, 'id' | 'name' | 'emoji' | 'stage'> | null
+  latest_checkin: BetCheckin | null
+}
