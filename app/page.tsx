@@ -11,6 +11,8 @@ import RevenueTiles from '@/components/home/RevenueTiles'
 import Scratchpad from '@/components/home/Scratchpad'
 import CommandBox from '@/components/home/CommandBox'
 import { Greeting } from '@/components/home/Greeting'
+import CycleFocus from '@/components/home/CycleFocus'
+import { getCurrentCycle, getCycleBets, getParkingLotProjects } from '@/lib/queries/cycles'
 import type { Profile } from '@/lib/types/database'
 
 export default async function HomePage() {
@@ -35,12 +37,17 @@ export default async function HomePage() {
     shaanProfile?.id === user.id ? 'Shaan' :
     'there'
 
-  const [nextTasks, pinnedProjects, revenueEntries, settingsRow] = await Promise.all([
+  const [nextTasks, pinnedProjects, revenueEntries, settingsRow, currentCycle] = await Promise.all([
     getNextStepTasks(),
     getPinnedProjects(),
     getRevenueEntries(),
     supabase.from('settings').select('value').eq('key', 'home_scratchpad').single(),
+    getCurrentCycle(),
   ])
+
+  const cycleActive = !!currentCycle && (currentCycle.phase === 'active' || currentCycle.phase === 'cooldown')
+  const bets = currentCycle && currentCycle.phase === 'active' ? await getCycleBets(currentCycle.id) : []
+  const parkingLot = currentCycle && currentCycle.phase === 'active' ? await getParkingLotProjects(currentCycle.id) : []
 
   const scratchpadText = (settingsRow.data?.value as string | null) ?? ''
 
@@ -74,6 +81,8 @@ export default async function HomePage() {
           <Greeting name={currentName} />
         </div>
 
+        <CycleFocus cycle={currentCycle} bets={bets} parkingLot={parkingLot} />
+
         {/* Quick capture (AI) */}
         <CommandBox />
 
@@ -84,13 +93,14 @@ export default async function HomePage() {
         <RevenueTiles entries={revenueEntries} />
 
         {/* 2-col: money moves + focus projects */}
-        <div className="grid gap-4" style={{ gridTemplateColumns: '1.3fr 1fr' }}>
-          <YourNext3
-            tasks={nextTasks}
-            profiles={allProfiles}
-          />
-          <FocusProjects projects={pinnedProjects} />
-        </div>
+        {cycleActive ? (
+          <YourNext3 tasks={nextTasks} profiles={allProfiles} />
+        ) : (
+          <div className="grid gap-4" style={{ gridTemplateColumns: '1.3fr 1fr' }}>
+            <YourNext3 tasks={nextTasks} profiles={allProfiles} />
+            <FocusProjects projects={pinnedProjects} />
+          </div>
+        )}
       </div>
     </>
   )
