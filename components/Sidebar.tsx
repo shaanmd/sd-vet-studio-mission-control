@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/hooks/use-auth'
 
 const NAV_ITEMS = [
   { href: '/',           label: 'Home',      shortcut: '⌘1' },
+  { href: '/cycle',      label: 'Cycle',      shortcut: '⌘0' },
   { href: '/projects',  label: 'Projects',   shortcut: '⌘2' },
   { href: '/finance',   label: 'Finance',    shortcut: '⌘3' },
   { href: '/crm',       label: 'CRM',        shortcut: '⌘4' },
