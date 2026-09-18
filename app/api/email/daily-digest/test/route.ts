@@ -3,6 +3,7 @@
 // (tasks/projects/wins) via the shared sender, so this button is the same
 // thing the 7am cron will fire — no test stub.
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { NextResponse } from 'next/server'
 import { sendDailyDigest } from '@/lib/email/daily-digest'
 
@@ -13,6 +14,8 @@ export async function POST(_req: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const outcome = await sendDailyDigest(supabase)
+  // Send with the service-role client so this button reads exactly the same
+  // data the cookie-less 7am cron does (see ../route.ts).
+  const outcome = await sendDailyDigest(createServiceClient())
   return NextResponse.json(outcome)
 }

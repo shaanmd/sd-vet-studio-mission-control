@@ -41,8 +41,81 @@ export interface DigestSendOutcome {
 }
 
 interface TaskRow { title: string; project: string; energy: string | null; due_date: string | null }
-interface ProjectRow { emoji: string | null; name: string; stage: string; revenue: number; tasks: number }
+interface FocusProjectRow { emoji: string | null; name: string; stage: string; nextStep: string | null }
 interface WinRow { title: string; win_type: string; happened_at: string }
+export interface RevenueSnapshot { yesterday: number; week: number; month: number }
+
+/** A fire-flagged task as fetched for the digest (one query, shared by all recipients). */
+export interface DigestTaskSource {
+  title: string
+  energy: string | null
+  due_date: string | null
+  assigned_to: string | null
+  project: { id: string; name: string; emoji: string | null; stage: string; pinned: boolean; updated_at: string } | null
+}
+
+// Mirrors getNextStepTasks() in lib/queries/personal-tasks.ts so the email
+// and the home page agree on which fire tasks matter and in what order.
+const ACTIVE_STAGES = new Set(['live', 'beta', 'building'])
+export const DIGEST_TASK_LIMIT = 5
+
+/**
+ * Home-page fire tasks (active-stage or pinned projects, pinned first, then
+ * most recently updated), narrowed to what this recipient owns, shares, or
+ * nobody has claimed yet.
+ */
+export function pickDigestTasks(
+  rows: DigestTaskSource[],
+  assignedTo: DigestRecipient['assignedTo'],
+  limit = DIGEST_TASK_LIMIT,
+): TaskRow[] {
+  const time = (t: DigestTaskSource) => (t.project?.updated_at ? new Date(t.project.updated_at).getTime() : 0)
+  return rows
+    .filter((t) => t.project && (ACTIVE_STAGES.has(t.project.stage) || t.project.pinned))
+    .filter((t) => t.assigned_to === null || t.assigned_to === assignedTo || t.assigned_to === 'both')
+    .sort((a, b) => {
+      if (a.project?.pinned && !b.project?.pinned) return -1
+      if (!a.project?.pinned && b.project?.pinned) return 1
+      return time(b) - time(a)
+    })
+    .slice(0, limit)
+    .map((t) => ({
+      title: t.title,
+      project: `${t.project!.emoji ?? ''} ${t.project!.name}`.trim(),
+      energy: t.energy,
+      due_date: t.due_date,
+    }))
+}
+
+function shiftISODate(iso: string, days: number): string {
+  const d = new Date(`${iso}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + days)
+  return d.toISOString().slice(0, 10)
+}
+
+/**
+ * Revenue totals on the Sydney calendar. `todayISO` is a YYYY-MM-DD date in
+ * Australia/Sydney — the cron runs at 7am AEST, which is still yesterday in
+ * UTC, so the home page's local-clock helpers in lib/finance would be off by a
+ * day here. Uses "yesterday" rather than "today": at 7am today is ~always $0.
+ */
+export function revenueSnapshot(
+  entries: { amount: number | null; revenue_date: string }[],
+  todayISO: string,
+): RevenueSnapshot {
+  const yesterday = shiftISODate(todayISO, -1)
+  const dow = new Date(`${todayISO}T00:00:00Z`).getUTCDay()
+  const monday = shiftISODate(todayISO, -((dow + 6) % 7))
+  const monthPrefix = todayISO.slice(0, 7)
+  const sum = (pred: (d: string) => boolean) =>
+    entries.filter((e) => pred(e.revenue_date)).reduce((s, e) => s + (e.amount ?? 0), 0)
+  return {
+    yesterday: sum((d) => d === yesterday),
+    week:      sum((d) => d >= monday && d <= todayISO),
+    month:     sum((d) => d.startsWith(monthPrefix) && d <= todayISO),
+  }
+}
+
 interface CycleEmailBet { project: string; goal: string; status: string | null; note: string | null }
 interface CycleEmailData {
   name: string
@@ -105,7 +178,63 @@ function buildCycleSection(cycle: CycleEmailData | null, appUrl: string): string
     </div>`
 }
 
-function buildEmailHtml(name: string, tasks: TaskRow[], projects: ProjectRow[], wins: WinRow[], cycle: CycleEmailData | null): string {
+const aud = (n: number) =>
+  new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(n)
+
+const STAGE_PILL: Record<string, { bg: string; color: string }> = {
+  building:    { bg: '#F5E7C8', color: '#8A5A1E' },
+  live:        { bg: '#D4F0EE', color: '#1E6B5E' },
+  beta:        { bg: '#D4F0EE', color: '#1E6B5E' },
+  maintenance: { bg: '#EFEAE0', color: '#6B7A82' },
+}
+
+function buildRevenueSection(rev: RevenueSnapshot): string {
+  // Table, not flex: Outlook and older Gmail clients ignore flexbox.
+  const tile = (label: string, value: number, accent: boolean) => `
+    <td width="33%" style="padding:0 4px;vertical-align:top;">
+      <div style="border:1px solid #E8E2D6;border-radius:10px;padding:12px 14px;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.6px;color:#6B7A82;font-weight:700;">${label}</div>
+        <div style="font-size:20px;font-weight:700;margin-top:6px;color:${accent ? '#1E6B5E' : '#0D2035'};">${aud(value)}</div>
+      </div>
+    </td>`
+  return `
+    <div style="padding:20px 24px 0;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+        <tr>${tile('Yesterday', rev.yesterday, false)}${tile('This week', rev.week, false)}${tile('This month', rev.month, true)}</tr>
+      </table>
+    </div>`
+}
+
+function buildFocusSection(projects: FocusProjectRow[]): string {
+  if (projects.length === 0) return ''
+  const rows = projects.map((p) => {
+    const pill = STAGE_PILL[p.stage] ?? STAGE_PILL.maintenance
+    return `
+      <div style="border:1px solid #E8E2D6;border-radius:10px;padding:12px 14px;margin-top:8px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+          <td style="font-size:14px;font-weight:700;color:#0D2035;">${p.emoji ?? ''} ${p.name}</td>
+          <td align="right"><span style="font-size:11px;background:${pill.bg};color:${pill.color};padding:2px 8px;border-radius:10px;">${p.stage}</span></td>
+        </tr></table>
+        ${p.nextStep
+          ? `<div style="font-size:12.5px;color:#1E2A35;background:#FBF3DE;border-radius:8px;padding:8px 10px;margin-top:8px;"><span style="color:#D4A853;">→</span> ${p.nextStep}</div>`
+          : `<div style="font-size:12px;color:#9AA5AC;margin-top:6px;">No next step set</div>`}
+      </div>`
+  }).join('')
+  return `
+    <div style="padding:20px 28px 0;">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:2px;color:#9AA5AC;font-weight:600;">Focus projects · ${projects.length} pinned</div>
+      ${rows}
+    </div>`
+}
+
+function buildEmailHtml(
+  name: string,
+  tasks: TaskRow[],
+  focusProjects: FocusProjectRow[],
+  revenue: RevenueSnapshot,
+  wins: WinRow[],
+  cycle: CycleEmailData | null,
+): string {
   const today = new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://sd-vet-studio-mission-control.vercel.app'
 
@@ -124,12 +253,6 @@ function buildEmailHtml(name: string, tasks: TaskRow[], projects: ProjectRow[], 
             </div>
           </div>`
       }).join('')
-
-  const projectRowsHtml = projects.length === 0 ? '' : projects.map(p => `
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #F5F0E8;">
-      <div style="font-size:13px;font-weight:600;color:#1E2A35;">${p.emoji ?? ''} ${p.name}</div>
-      <div style="font-size:12px;color:#9AA5AC;">${p.tasks} tasks · $${p.revenue.toFixed(0)} rev</div>
-    </div>`).join('')
 
   const winRows = wins.length === 0 ? '' : wins.slice(0, 3).map(w => `
     <div style="display:flex;align-items:center;gap:8px;padding:6px 0;">
@@ -152,6 +275,8 @@ function buildEmailHtml(name: string, tasks: TaskRow[], projects: ProjectRow[], 
       <div style="font-size:13px;color:rgba(255,255,255,0.8);margin-top:4px;">${today}</div>
     </div>
 
+    ${buildRevenueSection(revenue)}
+
     ${buildCycleSection(cycle, appUrl)}
 
     <div style="padding:24px 28px 0;">
@@ -159,11 +284,7 @@ function buildEmailHtml(name: string, tasks: TaskRow[], projects: ProjectRow[], 
       ${taskRows}
     </div>
 
-    ${projects.length > 0 ? `
-    <div style="padding:20px 28px 0;">
-      <div style="font-size:11px;text-transform:uppercase;letter-spacing:2px;color:#9AA5AC;font-weight:600;margin-bottom:4px;">Active projects</div>
-      ${projectRowsHtml}
-    </div>` : ''}
+    ${buildFocusSection(focusProjects)}
 
     ${wins.length > 0 ? `
     <div style="padding:20px 28px 0;">
@@ -214,41 +335,37 @@ export async function sendDailyDigest(
 
   const resend = new Resend(process.env.RESEND_API_KEY)
 
-  // Shared data: revenue totals, recent wins, active projects
-  const [revenueRes, winsRes, projectsRes] = await Promise.all([
-    supabase.from('revenue_entries').select('project_id, amount'),
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Sydney' })
+
+  // Shared data — the same sources the home page reads.
+  const [revenueRes, winsRes, pinnedRes, fireTasksRes] = await Promise.all([
+    supabase.from('revenue_entries').select('amount, revenue_date').gte('revenue_date', shiftISODate(today, -40)),
     supabase.from('wins').select('title, win_type, happened_at').order('happened_at', { ascending: false }).limit(5),
+    // Matches getPinnedProjects() in lib/queries/projects.ts
     supabase.from('projects')
       .select('id, name, emoji, stage')
-      .in('stage', ['live', 'beta', 'building'])
+      .eq('pinned', true)
+      .neq('stage', 'archived')
       .order('updated_at', { ascending: false })
-      .limit(5),
+      .limit(3),
+    supabase.from('tasks')
+      .select('title, energy, due_date, assigned_to, project_id, project:projects(id, name, emoji, stage, pinned, updated_at)')
+      .eq('is_next_step', true)
+      .eq('completed', false),
   ])
 
-  const allRevenue = revenueRes.data ?? []
+  const revenue = revenueSnapshot((revenueRes.data ?? []) as { amount: number | null; revenue_date: string }[], today)
   const allWins = winsRes.data ?? []
-  const activeProjects = projectsRes.data ?? []
+  const fireTasks = (fireTasksRes.data ?? []) as unknown as (DigestTaskSource & { project_id: string })[]
 
-  const projectIds = activeProjects.map((p: any) => p.id)
-  const taskCountRes = projectIds.length > 0
-    ? await supabase.from('tasks').select('project_id').in('project_id', projectIds).eq('completed', false)
-    : { data: [] }
-
-  const taskCounts: Record<string, number> = {}
-  for (const t of (taskCountRes.data ?? []) as any[]) {
-    taskCounts[t.project_id] = (taskCounts[t.project_id] ?? 0) + 1
-  }
-
-  const projectRows: ProjectRow[] = activeProjects.map((p: any) => ({
+  const focusProjects: FocusProjectRow[] = ((pinnedRes.data ?? []) as any[]).map((p) => ({
     emoji: p.emoji,
     name: p.name,
     stage: p.stage,
-    revenue: allRevenue.filter((r: any) => r.project_id === p.id).reduce((s: number, r: any) => s + (r.amount ?? 0), 0),
-    tasks: taskCounts[p.id] ?? 0,
+    nextStep: fireTasks.find((t) => t.project_id === p.id)?.title ?? null,
   }))
 
   // Current cycle (shared across recipients; bets filtered per-recipient below)
-  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Sydney' })
   const { data: cycleRow } = await supabase
     .from('cycles')
     .select('*')
@@ -289,39 +406,7 @@ export async function sendDailyDigest(
   const results: DigestResult[] = []
 
   for (const recipient of recipients) {
-    // Tasks assigned to this person OR to 'both'
-    const { data: taskData } = await supabase
-      .from('tasks')
-      .select('title, energy, due_date, project:projects(name, emoji)')
-      .in('assigned_to', [recipient.assignedTo, 'both'])
-      .eq('is_next_step', true)
-      .eq('completed', false)
-      .limit(3)
-
-    // Plus unassigned next-step tasks (shared)
-    const { data: sharedTaskData } = await supabase
-      .from('tasks')
-      .select('title, energy, due_date, project:projects(name, emoji)')
-      .is('assigned_to', null)
-      .eq('is_next_step', true)
-      .eq('completed', false)
-      .limit(3)
-
-    const personTasks: TaskRow[] = ((taskData ?? []) as any[]).map((t) => ({
-      title: t.title,
-      project: t.project ? `${t.project.emoji ?? ''} ${t.project.name}`.trim() : 'General',
-      energy: t.energy,
-      due_date: t.due_date ?? null,
-    }))
-
-    const sharedTasks: TaskRow[] = ((sharedTaskData ?? []) as any[]).map((t) => ({
-      title: t.title,
-      project: t.project ? `${t.project.emoji ?? ''} ${t.project.name}`.trim() : 'General',
-      energy: t.energy,
-      due_date: t.due_date ?? null,
-    }))
-
-    const tasks = [...personTasks, ...sharedTasks].slice(0, 3)
+    const tasks = pickDigestTasks(fireTasks, recipient.assignedTo)
 
     const recipientCycle: CycleEmailData | null = cyclePhase && cycleRow
       ? {
@@ -350,7 +435,8 @@ export async function sendDailyDigest(
         from: env.from,
         to: recipient.email,
         subject: `Mission Control · ${new Date().toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })} 🎯`,
-        html: buildEmailHtml(recipient.name, tasks, projectRows, allWins as WinRow[], recipientCycle),
+        // Like home: during a cycle the bets take the place of focus projects.
+        html: buildEmailHtml(recipient.name, tasks, cyclePhase ? [] : focusProjects, revenue, allWins as WinRow[], recipientCycle),
       })
 
       if (resp?.error) {
